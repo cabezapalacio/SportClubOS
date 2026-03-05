@@ -25,6 +25,13 @@ function parseMonto(v)   { return window.SC?.utils?.parseMonto(v)  || parseFloat
 function ventaMonto(v)   { return window.SC?.utils?.ventaMonto(v)  || 0; }
 function hashStr(s)      { return window.SC?.utils?.hashStr(s)     || '0'; }
 
+var TITLES={'dash-recepcion':'PANEL RECEPCIÓN',dashboard:'DASHBOARD · ADMINISTRADOR',registrar:'REGISTRAR VENTA',caja:'CIERRE DE CAJA',
+  recaudacion:'RECAUDACIÓN',historial:'HISTORIAL',socios:'MEMBRESÍAS',
+  lockers:'GESTIÓN DE LOCKERS',alertas:'ALERTAS Y VENCIMIENTOS',deudas:'DEUDAS Y PAGOS PARCIALES',
+  calendario:'CALENDARIO DE VENCIMIENTOS',productos:'PRODUCTOS Y PRECIOS',retiros:'RETIROS DE CAJA',wa:'HISTORIAL WHATSAPP',exportar:'EXPORTAR PARA EL CONTADOR',importar:'IMPORTAR DESDE EXCEL',db:'CONFIGURACIÓN BASE DE DATOS',
+  'pack-cafe':'PACK DE CAFÉ ☕',
+  turnos:'CAMBIO DE TURNO 🔄'};
+
 // ── Estado global (aliases de window.SC.state) ────────────────────────
 // Estas variables SON window.SC.state.* — se sincronizan automáticamente
 // porque son referencias al mismo objeto en memoria.
@@ -2771,12 +2778,7 @@ function openModal(id){ const m=document.getElementById(id); if(m) m.classList.a
 // ══════════════════════════════════════════
 //  NAVEGACIÓN
 // ══════════════════════════════════════════
-const TITLES={'dash-recepcion':'PANEL RECEPCIÓN',dashboard:'DASHBOARD · ADMINISTRADOR',registrar:'REGISTRAR VENTA',caja:'CIERRE DE CAJA',
-  recaudacion:'RECAUDACIÓN',historial:'HISTORIAL',socios:'MEMBRESÍAS',
-  lockers:'GESTIÓN DE LOCKERS',alertas:'ALERTAS Y VENCIMIENTOS',deudas:'DEUDAS Y PAGOS PARCIALES',
-  calendario:'CALENDARIO DE VENCIMIENTOS',productos:'PRODUCTOS Y PRECIOS',retiros:'RETIROS DE CAJA',wa:'HISTORIAL WHATSAPP',exportar:'EXPORTAR PARA EL CONTADOR',importar:'IMPORTAR DESDE EXCEL',db:'CONFIGURACIÓN BASE DE DATOS',
-  'pack-cafe':'PACK DE CAFÉ ☕',
-  turnos:'CAMBIO DE TURNO 🔄'};
+
 
 
 function toggleNavGroup(group) {
