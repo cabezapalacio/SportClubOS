@@ -1351,23 +1351,23 @@
         <div class="card" style="margin-bottom:18px">
           <div class="card-title">🔗 Conexión con Google Sheets</div>
           <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">
-            Conectá la app a tu planilla para sincronizar datos entre VIA 24 y BARRIO NORTE en tiempo real.<br>
-            <span style="color:var(--sc-yellow)">Ver la guía Word adjunta para el paso a paso completo.</span>
+            Conectá la app a tu planilla de Google Sheets a través de Apps Script.<br>
+            <span style="color:var(--sc-yellow)">Seguí las instrucciones del PDF para obtener la URL y el token.</span>
           </p>
 
           <div class="form-group" style="margin-bottom:14px">
-            <label>ID de la planilla de Google Sheets</label>
-            <input type="text" id="db-sheet-id"
-              placeholder="Ej: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+            <label>URL del Web App (Google Apps Script)</label>
+            <input type="text" id="db-gas-url"
+              placeholder="https://script.google.com/macros/s/.../exec"
               style="font-family:monospace;font-size:12px">
           </div>
           <div class="form-group" style="margin-bottom:18px">
-            <label>Credenciales JSON (contenido del archivo .json descargado)</label>
-            <textarea id="db-credentials" rows="5"
-              placeholder='Pegá acá el contenido completo del archivo JSON...'
-              style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:9px;font-family:monospace;font-size:11px;width:100%;resize:vertical;outline:none"></textarea>
+            <label>Token de API</label>
+            <input type="password" id="db-gas-token"
+              placeholder="El token que configuraste en Script Properties"
+              style="font-family:monospace;font-size:12px">
           </div>
-          <div style="display:flex;gap:10px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn-accent" onclick="guardarConexionDB()">💾 Guardar y conectar</button>
             <button class="btn btn-outline" onclick="testConexionDB()">🔌 Probar conexión</button>
             <button class="btn btn-danger btn-sm" onclick="desconectarDB()">Desconectar</button>
