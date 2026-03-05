@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportClub Tucumán</title>
+<meta name="description" content="Sistema de gestión SportClub Tucumán">
+<meta name="theme-color" content="#CC0015">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Fuentes -->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+
+<!-- Dependencias externas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Estilos — versionado para forzar refresh en cada deploy -->
+<link rel="stylesheet" href="./css/styles.css?v=2.0.0">
+
+</head>
+<body>
+
+
+
+<!-- ════ PANTALLA DE LOGIN ════ -->
+<div id="login-screen" style="
+  position:fixed;inset:0;z-index:9999;
+  background:#0D0D0D;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;
+">
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="font-size:48px;font-weight:900;letter-spacing:2px;color:#fff;line-height:1">SPORT<span style="color:#CC0015">CLUB</span></div>
+    <div style="font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.35);margin-top:6px">TUCUMÁN</div>
+  </div>
+
+  <div style="background:#151515;border:1px solid #2E2E2E;border-radius:16px;padding:32px;width:340px">
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+      <button onclick="loginComo('recepcion')" style="
+        padding:20px 24px;border-radius:12px;border:1px solid #2E2E2E;
+        background:#1E1E1E;color:#F0EDE8;font-size:17px;font-weight:700;
+        cursor:pointer;transition:all .18s;font-family:'DM Sans';
+        display:flex;align-items:center;justify-content:center;gap:12px;
+        text-transform:uppercase;letter-spacing:2px;width:100%;
+      " onmouseover="this.style.borderColor='#F5C100';this.style.background='#252525'"
+         onmouseout="this.style.borderColor='#2E2E2E';this.style.background='#1E1E1E'">
+        <span style="font-size:26px">👤</span>
+        <span>Recepción</span>
+      </button>
+      <button onclick="loginComo('admin')" style="
+        padding:20px 24px;border-radius:12px;border:1px solid #CC0015;
+        background:rgba(204,0,21,.08);color:#F0EDE8;font-size:17px;font-weight:700;
+        cursor:pointer;transition:all .18s;font-family:'DM Sans';
+        display:flex;align-items:center;justify-content:center;gap:12px;
+        text-transform:uppercase;letter-spacing:2px;width:100%;
+      " onmouseover="this.style.background='rgba(204,0,21,.15)'" onmouseout="this.style.background='rgba(204,0,21,.08)'">
+        <span style="font-size:26px">🔑</span>
+        <span>Administrador</span>
+      </button>
+    </div>
+
+    <div id="login-pass-wrap" style="display:none">
+      <input type="password" id="login-pass" placeholder="Contraseña de administrador..."
+        style="width:100%;padding:12px 14px;background:#0D0D0D;border:1px solid #2E2E2E;
+          border-radius:9px;color:#F0EDE8;font-size:14px;font-family:'DM Sans';outline:none;margin-bottom:10px"
+        onkeydown="if(event.key==='Enter') confirmarLoginAdmin()">
+      <button onclick="confirmarLoginAdmin()" style="
+        width:100%;padding:12px;background:#CC0015;color:#fff;border:none;
+        border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans';
+      ">Ingresar como Administrador</button>
+      <div id="login-error" style="color:#FF1A2E;font-size:12px;text-align:center;margin-top:8px;display:none">
+        Contraseña incorrecta
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado de conexión bajo los perfiles -->
+  <div id="login-sync-status" style="margin-top:16px;padding:8px 18px;border-radius:20px;
+    font-size:11px;font-weight:600;background:#151515;border:1px solid #2E2E2E;
+    color:#555;display:flex;align-items:center;gap:7px;transition:all .3s">
+    <span id="login-sync-dot" style="width:7px;height:7px;border-radius:50%;background:#444;display:inline-block"></span>
+    <span id="login-sync-msg">Verificando conexión...</span>
+  </div>
+  <div style="margin-top:10px;font-size:11px;color:#333">SportClub Tucumán · v1.0</div>
+</div>
+
+
+<!-- MODAL CONFIRMAR SEDE -->
+<div class="modal-overlay" id="modal-sede-confirm">
+  <div class="modal" style="max-width:360px;text-align:center">
+    <div style="font-size:36px;margin-bottom:10px">📍</div>
+    <div class="modal-title" style="text-align:center">¿Confirmás el cambio de sede?</div>
+    <div style="margin:14px 0 20px;font-size:14px;color:var(--muted)">
+      Vas a cargar las ventas en <strong id="sede-confirm-nombre" style="color:var(--sc-yellow)"></strong>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-accent" onclick="confirmarCambioSede()" style="flex:1;justify-content:center">Sí, cambiar</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-sede-confirm')" style="flex:1">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">SPORT<span>CLUB</span></div>
+    <div class="logo-sub">TUCUMÁN · SISTEMA OPERATIVO</div>
+    <div style="font-size:8px;color:rgba(255,255,255,.2);letter-spacing:1.5px;margin-top:2px;text-align:center">v1.0</div>
+    <div style="margin-top:12px">
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Sede activa</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div class="sede-btn active" id="sede-via24" onclick="pedirConfirmSede('VIA 24')">
+          <span class="sede-dot"></span> VIA 24
+        </div>
+        <div class="sede-btn" id="sede-barrio" onclick="pedirConfirmSede('BARRIO NORTE')">
+          <span class="sede-dot"></span> BARRIO NORTE
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="rol-badge" style="
+    margin:0 14px 12px;padding:7px 12px;border-radius:8px;
+    font-size:11px;font-weight:600;letter-spacing:.5px;
+    display:flex;align-items:center;gap:7px;justify-content:space-between;
+  ">
+    <span id="rol-label">👤 RECEPCIÓN</span>
+    <span onclick="cerrarSesion()" style="cursor:pointer;opacity:.6;font-size:10px" title="Cerrar sesión">✕ salir</span>
+  </div>
+  <nav class="nav" id="main-nav">
+    <div class="nav-group">Principal</div>
+    <div class="nav-item" id="nav-dash-recepcion" onclick="goTo('dash-recepcion',this)">
+      <span class="nav-icon">🏠</span><span>Mi panel</span>
+    </div>
+    <div class="nav-item nav-item-admin" id="nav-dashboard" onclick="goTo('dashboard',this)">
+      <span class="nav-icon">📊</span><span>Dashboard</span>
+    </div>
+    <div class="nav-item" id="nav-registrar" onclick="goTo('registrar',this)">
+      <span class="nav-icon">➕</span><span>Registrar venta</span>
+    </div>
+    <div class="nav-group nav-group-collapsible" id="nav-group-informes" onclick="toggleNavGroup('informes')">
+      <span>Informes</span>
+      <span class="nav-group-arrow" id="nav-arrow-informes">▾</span>
+    </div>
+    <div class="nav-group-items" id="nav-items-informes">
+    <div class="nav-item" id="nav-retiros" onclick="goTo('retiros',this)">
+      <span class="nav-icon">💸</span><span>Retiros de caja</span>
+    </div>
+    <div class="nav-item" id="nav-caja" onclick="goTo('caja',this)">
+      <span class="nav-icon">🏦</span><span>Cierre de caja</span>
+    </div>
+    <div class="nav-item" id="nav-recaudacion" onclick="goTo('recaudacion',this)">
+      <span class="nav-icon">📈</span><span>Recaudación</span>
+    </div>
+    <div class="nav-item" id="nav-historial" onclick="goTo('historial',this)">
+      <span class="nav-icon">🗂️</span><span>Historial</span>
+    </div>
+    </div>
+    <div class="nav-group">Gestión</div>
+    <div class="nav-item" id="nav-socios" onclick="goTo('socios',this)">
+      <span class="nav-icon">👥</span><span>Membresías</span>
+    </div>
+    <div class="nav-item" id="nav-lockers" onclick="goTo('lockers',this)">
+      <span class="nav-icon">🔐</span><span>Lockers</span>
+    </div>
+    <div class="nav-item" id="nav-calendario" onclick="goTo('calendario',this)">
+      <span class="nav-icon">📅</span><span>Calendario vencimientos</span>
+    </div>
+    <div class="nav-item" id="nav-wa" onclick="goTo('wa',this)">
+      <span class="nav-icon">💬</span><span>Contactos WA</span>
+    </div>
+    <div class="nav-item" id="nav-alertas" onclick="goTo('alertas',this)">
+      <span class="nav-icon">🔔</span><span>Alertas</span>
+      <span class="alerts-badge" id="alerts-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" id="nav-pack-cafe" onclick="goTo('pack-cafe',this)">
+      <span class="nav-icon">☕</span><span>Pack Café</span>
+      <span class="alerts-badge" id="pack-cafe-badge" style="display:none;background:#c8a800;color:#000">0</span>
+    </div>
+    <div class="nav-item" id="nav-turnos" onclick="goTo('turnos',this)">
+      <span class="nav-icon">🔄</span><span>Cambio de turno</span>
+    </div>
+    <div class="nav-item" id="nav-deudas" onclick="goTo('deudas',this)">
+      <span class="nav-icon">💳</span><span>Deudas</span>
+      <span class="alerts-badge" id="deudas-badge" style="display:none;background:var(--sc-yellow);color:#000">0</span>
+    </div>
+    <div class="nav-item nav-item-admin" id="nav-productos" onclick="goTo('productos',this)">
+      <span class="nav-icon">🏷️</span><span>Productos y stock</span>
+    </div>
+    <div class="nav-item nav-item-admin" id="nav-egresos" onclick="goTo('egresos',this)">
+      <span class="nav-icon">💸</span><span>Libro de egresos</span>
+    </div>
+    <div class="nav-item nav-item-admin" id="nav-exportar" onclick="goTo('exportar',this)">
+      <span class="nav-icon">📤</span><span>Exportar contador</span>
+    </div>
+    <div class="nav-item nav-item-admin" id="nav-db" onclick="goTo('db',this)">
+      <span class="nav-icon">⚙️</span><span>Configuración DB</span>
+      <span class="db-status-dot" id="db-dot" title="Sin conectar">⚪</span>
+    </div>
+    <div class="nav-item nav-item-admin" id="nav-importar" onclick="goTo('importar',this)">
+      <span class="nav-icon">📥</span><span>Importar Excel</span>
+    </div>
+  </nav>
+
+</div>
+      <div style="font-size:10px;color:var(--muted)">Acceso directo en tu celu</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">DASHBOARD</div>
+    <div class="topbar-right">
+      <button id="tema-btn" onclick="toggleTema()" title="Claro / Oscuro"
+        style="background:none;border:1px solid var(--border);border-radius:8px;
+          padding:5px 10px;color:var(--text);cursor:pointer;font-size:18px;
+          line-height:1;transition:border-color .15s"
+        onmouseover="this.style.borderColor='var(--sc-yellow)'"
+        onmouseout="this.style.borderColor='var(--border)'">☀️</button>
+      <span class="sede-badge" id="topbar-sede">VIA 24</span>
+      <div class="date-chip" id="topbar-date"></div>
+      <div id="sync-status" onclick="forzarSync()" title="Click para sincronizar ahora"
+  style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:.4px;cursor:pointer;transition:all .3s;
+  background:rgba(204,0,21,.1);color:#CC0015;border:1px solid rgba(204,0,21,.25)">
+  <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#CC0015;display:inline-block"></span>
+  <span id="sync-lbl">SIN BASE DE DATOS</span>
+</div>
+      <button class="btn btn-accent btn-sm" onclick="goTo('registrar', document.getElementById('nav-registrar'))">+ Nueva venta</button>
+    </div>
+  </div>
+  <div class="content">
+
+
+    <!-- ════════ DASHBOARD RECEPCIÓN ════════ -->
+    <div class="section" id="section-dash-recepcion">
+
+      <!-- BOTÓN GRANDE REGISTRAR VENTA -->
+      <div style="display:flex;gap:10px;align-items:stretch;margin-bottom:10px">
+        <button class="btn-registrar-big" style="flex:1;margin-bottom:0"
+          onclick="goTo('registrar',document.getElementById('nav-registrar'))">
+          <span style="font-size:28px">➕</span> REGISTRAR VENTA
+        </button>
+        <button class="btn-gasto" onclick="abrirGasto()"
+          style="flex-direction:column;gap:4px;padding:14px 18px;font-size:12px">
+          <span style="font-size:22px">💸</span>
+          <span>Gasto</span>
+        </button>
+      </div>
+
+      <!-- VENTAS RÁPIDAS DASHBOARD -->
+      <div id="vr-dash-wrap-rec" style="margin-bottom:18px">
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px">
+          ⚡ Venta rápida
+        </div>
+        <div class="vr-grid" id="vr-dash-grid-rec"></div>
+      </div>
+
+      <!-- ALERTA STOCK RECEPCIÓN -->
+      <div id="dash-stock-alerta-rec" style="display:none;margin-bottom:10px"></div>
+
+      <!-- KPIs del día solamente -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi-card green">
+          <div class="kpi-label">💰 Recaudado hoy</div>
+          <div class="kpi-value" id="rec-hoy-total">$0</div>
+          <div class="kpi-sub" id="rec-hoy-trans">0 transacciones</div>
+        </div>
+        <div class="kpi-card accent">
+          <div class="kpi-label">💵 Efectivo en caja</div>
+          <div class="kpi-value" id="rec-hoy-efectivo">$0</div>
+          <div class="kpi-sub">Disponible para retiro</div>
+        </div>
+        <div class="kpi-card yellow">
+          <div class="kpi-label">🔔 Alertas hoy</div>
+          <div class="kpi-value" id="rec-alertas">0</div>
+          <div class="kpi-sub">Vencimientos próximos</div>
+        </div>
+      </div>
+
+      <!-- DINERO A RENDIR -->
+      <div class="card" style="margin-top:20px;border:2px solid rgba(245,193,0,.3);background:linear-gradient(135deg,rgba(245,193,0,.05),var(--s1))">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+          <div>
+            <div style="font-size:11px;color:var(--sc-yellow);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">
+              💵 Dinero a rendir — Efectivo del día
+            </div>
+            <div style="font-family:'Bebas Neue';font-size:52px;color:var(--sc-yellow);line-height:1;text-shadow:0 0 30px rgba(245,193,0,.3)" id="rec-a-rendir">$0</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px" id="rec-a-rendir-sub">Efectivo cobrado menos retiros realizados</div>
+          </div>
+          <div style="text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center">
+            <button class="btn btn-accent" onclick="abrirRetiro()" style="
+              width:200px;padding:15px;font-size:15px;font-weight:700;
+              background:var(--sc-yellow);color:#000;border:none;border-radius:10px;
+              box-shadow:0 0 20px rgba(245,193,0,.3);
+            ">💸 RETIRAR EFECTIVO</button>
+            <button class="btn btn-outline" onclick="abrirResumenTurno()" style="width:200px;padding:12px">📋 Resumen del turno</button>
+            <button class="btn-gasto" onclick="abrirGasto()" style="width:200px;justify-content:center">💸 Registrar gasto</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimas 5 ventas del día -->
+      <div class="two-col" style="margin-top:20px">
+        <div class="card">
+          <div class="card-title">Ventas de hoy <span id="rec-count-hoy" style="color:var(--sc-yellow)"></span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Hora</th><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Método</th><th></th></tr></thead>
+              <tbody id="rec-ventas-hoy"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔔 Alertas de vencimiento</div>
+          <div id="rec-alertas-list"></div>
+        </div>
+      </div>
+
+      <!-- Retiros del día -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-title">Retiros de hoy</div>
+        <div id="rec-retiros-hoy"></div>
+      </div>
+
+    </div>
+
+    <!-- ════════ DASHBOARD ════════ -->
+    <div class="section" id="section-dashboard">
+
+      <!-- BOTÓN GRANDE REGISTRAR VENTA + gasto rápido -->
+      <div style="display:flex;gap:10px;align-items:stretch;margin-bottom:10px">
+        <button class="btn-registrar-big" style="flex:1;margin-bottom:0"
+          onclick="goTo('registrar',document.getElementById('nav-registrar'))">
+          <span style="font-size:28px">➕</span> REGISTRAR VENTA
+        </button>
+        <button class="btn-gasto" onclick="abrirGasto()"
+          style="flex-direction:column;gap:4px;padding:14px 18px;font-size:12px">
+          <span style="font-size:22px">💸</span>
+          <span>Gasto</span>
+        </button>
+      </div>
+
+      <!-- VENTAS RÁPIDAS DASHBOARD -->
+      <div id="vr-dash-wrap" style="margin-bottom:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px">
+            ⚡ Venta rápida
+          </div>
+        </div>
+        <div class="vr-grid" id="vr-dash-grid"></div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card teal" onclick="goTo('socios',document.getElementById('nav-socios'))" style="cursor:pointer" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          <div class="kpi-label">Clientes este mes</div>
+          <div class="kpi-value" id="d-socios">0</div>
+          <div class="kpi-sub">Compraron este mes</div>
+        </div>
+        <div class="kpi-card red" onclick="goTo('alertas',document.getElementById('nav-alertas'))" style="cursor:pointer" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          <div class="kpi-label">Alertas</div>
+          <div class="kpi-value" id="d-alertas">0</div>
+          <div class="kpi-sub">Vencimientos / pendientes</div>
+        </div>
+      </div>
+
+      <!-- ALERTA STOCK BAJO (se muestra solo cuando hay productos por stockear) -->
+      <div id="dash-stock-alerta" style="display:none"></div>
+
+      <!-- ── VENTAS DEL DÍA POR SEDE ── -->
+      <div style="margin-top:16px;margin-bottom:6px;font-size:10px;color:var(--muted);
+        text-transform:uppercase;letter-spacing:1.5px">📅 Ventas del día</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+        <div onclick="goTo('historial',document.getElementById('nav-historial'))" style="background:linear-gradient(135deg,rgba(204,0,21,.12),var(--s1));border:1px solid rgba(204,0,21,.3);border-radius:14px;padding:20px 22px;cursor:pointer;transition:all .18s" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='rgba(204,0,21,.7)'" onmouseout="this.style.transform='';this.style.borderColor='rgba(204,0,21,.3)'">
+          <div style="font-size:11px;color:var(--sc-red);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:700;display:flex;justify-content:space-between"><span>📍 VIA 24</span><span style="opacity:.4;font-size:9px">historial →</span></div>
+          <div style="font-family:'Bebas Neue';font-size:48px;color:#fff;line-height:1" id="d-hoy-v24">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px" id="d-hoy-v24-sub">0 transacciones</div>
+          <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+            💵 Efectivo: <strong id="d-hoy-v24-ef" style="color:var(--text)">$0</strong>
+          </div>
+        </div>
+
+        <div onclick="goTo('historial',document.getElementById('nav-historial'))" style="background:linear-gradient(135deg,rgba(204,0,21,.12),var(--s1));border:1px solid rgba(204,0,21,.3);border-radius:14px;padding:20px 22px;cursor:pointer;transition:all .18s" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='rgba(204,0,21,.7)'" onmouseout="this.style.transform='';this.style.borderColor='rgba(204,0,21,.3)'">
+          <div style="font-size:11px;color:var(--sc-red);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:700;display:flex;justify-content:space-between"><span>📍 BARRIO NORTE</span><span style="opacity:.4;font-size:9px">historial →</span></div>
+          <div style="font-family:'Bebas Neue';font-size:48px;color:#fff;line-height:1" id="d-hoy-bn">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px" id="d-hoy-bn-sub">0 transacciones</div>
+          <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+            💵 Efectivo: <strong id="d-hoy-bn-ef" style="color:var(--text)">$0</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── VENTAS DEL MES POR SEDE ── -->
+      <div style="margin-bottom:6px;font-size:10px;color:var(--muted);
+        text-transform:uppercase;letter-spacing:1.5px">📊 Acumulado del mes</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+
+        <div onclick="goTo('recaudacion',document.getElementById('nav-recaudacion'))" style="background:linear-gradient(135deg,rgba(245,193,0,.07),var(--s1));border:1px solid rgba(245,193,0,.25);border-radius:14px;padding:20px 22px;cursor:pointer;transition:all .18s" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='rgba(245,193,0,.6)'" onmouseout="this.style.transform='';this.style.borderColor='rgba(245,193,0,.25)'">
+          <div style="font-size:11px;color:var(--sc-yellow);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:700;display:flex;justify-content:space-between"><span>📍 VIA 24</span><span style="opacity:.4;font-size:9px">recaudación →</span></div>
+          <div style="font-family:'Bebas Neue';font-size:48px;color:var(--sc-yellow);line-height:1"
+            id="d-mes-v24">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px" id="d-mes-v24-sub">0 ventas este mes</div>
+          <div style="margin-top:10px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+              <span style="color:var(--muted)">vs mes anterior</span>
+              <span id="d-mes-v24-vs" style="font-weight:700">—</span>
+            </div>
+            <div style="height:4px;background:var(--s3);border-radius:2px">
+              <div id="d-mes-v24-bar" style="height:4px;background:var(--sc-yellow);border-radius:2px;width:0%;transition:width .6s"></div>
+            </div>
+          </div>
+        </div>
+
+        <div onclick="goTo('recaudacion',document.getElementById('nav-recaudacion'))" style="background:linear-gradient(135deg,rgba(245,193,0,.07),var(--s1));border:1px solid rgba(245,193,0,.25);border-radius:14px;padding:20px 22px;cursor:pointer;transition:all .18s" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='rgba(245,193,0,.6)'" onmouseout="this.style.transform='';this.style.borderColor='rgba(245,193,0,.25)'">
+          <div style="font-size:11px;color:var(--sc-yellow);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:700;display:flex;justify-content:space-between"><span>📍 BARRIO NORTE</span><span style="opacity:.4;font-size:9px">recaudación →</span></div>
+          <div style="font-family:'Bebas Neue';font-size:48px;color:var(--sc-yellow);line-height:1"
+            id="d-mes-bn">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px" id="d-mes-bn-sub">0 ventas este mes</div>
+          <div style="margin-top:10px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+              <span style="color:var(--muted)">vs mes anterior</span>
+              <span id="d-mes-bn-vs" style="font-weight:700">—</span>
+            </div>
+            <div style="height:4px;background:var(--s3);border-radius:2px">
+              <div id="d-mes-bn-bar" style="height:4px;background:var(--sc-yellow);border-radius:2px;width:0%;transition:width .6s"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="three-col">
+        <div class="card">
+          <div class="card-title">Recaudación — últimos 7 días</div>
+          <div class="bar-chart" id="chart-week"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Por método de pago</div>
+          <div id="dash-metodos"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Últimas 5 ventas <span onclick="goTo('historial',document.getElementById('nav-historial'))" style="cursor:pointer;color:var(--accent);font-size:10px">Ver historial →</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Cliente</th><th>Concepto</th><th>Sede</th><th>Monto</th><th>Hora</th><th></th></tr></thead>
+              <tbody id="dash-table"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Alertas recientes <span onclick="goTo('alertas',document.getElementById('nav-alertas'))" style="cursor:pointer;color:var(--accent);font-size:10px">Ver todas →</span></div>
+          <div id="dash-alerts"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ RETIROS DE CAJA ════════ -->
+    <div class="section" id="section-retiros">
+      <div style="max-width:880px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card teal">
+            <div class="kpi-label">💸 Retirado hoy</div>
+            <div class="kpi-value" id="ret-hoy">$0</div>
+            <div class="kpi-sub">Efectivo retirado hoy</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">📅 Retirado este mes</div>
+            <div class="kpi-value" id="ret-mes">$0</div>
+            <div class="kpi-sub" id="ret-cant">0 retiros</div>
+          </div>
+          <div class="kpi-card" style="display:flex;flex-direction:column;justify-content:center;gap:10px">
+            <button class="btn btn-accent" style="width:100%;padding:16px;font-size:15px;font-weight:700;background:var(--sc-yellow);color:#000;border:none;border-radius:10px" onclick="abrirRetiro()">💸 RETIRAR EFECTIVO</button>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+            <div class="card-title" style="margin-bottom:0">Historial de retiros</div>
+            <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--muted);align-self:center">Desde</span>
+              <input type="date" id="ret-desde" onchange="renderRetiros()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+              <span style="font-size:11px;color:var(--muted);align-self:center">Hasta</span>
+              <input type="date" id="ret-hasta" onchange="renderRetiros()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+              <select id="ret-sede" onchange="renderRetiros()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+                <option value="">Ambas sedes</option>
+                <option value="VIA 24">VIA 24</option>
+                <option value="BARRIO NORTE">Barrio Norte</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha</th><th>Hora</th><th>Sede</th><th>Nro</th><th>Detalle</th><th>Monto</th></tr></thead>
+              <tbody id="ret-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ CIERRE DE CAJA ════════ -->
+    <div class="section" id="section-caja">
+      <div style="max-width:820px">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div class="card-title" style="margin-bottom:0">📅 Fecha del cierre</div>
+            <input type="date" id="caja-fecha" onchange="renderCaja()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'DM Sans';font-size:13px;outline:none">
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="exportarCajaTxt()">📄 Exportar .txt</button>
+              <button class="btn btn-accent btn-sm" onclick="window.print()">🖨 Imprimir</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="card">
+            <div class="card-title">Por concepto</div>
+            <div id="caja-conceptos"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Por método de pago</div>
+            <div id="caja-metodos"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">Resumen del día</div>
+          <div id="caja-resumen"></div>
+        </div>
+        <div class="card" style="border:2px solid rgba(245,193,0,.3);background:linear-gradient(135deg,rgba(245,193,0,.05),var(--s1))">
+          <div style="font-size:11px;color:var(--sc-yellow);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">💰 TOTAL DEL DÍA</div>
+          <div style="font-family:'Bebas Neue';font-size:52px;color:var(--sc-yellow);line-height:1" id="caja-total">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px" id="caja-total-sub"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ RECAUDACIÓN ════════ -->
+    <div class="section" id="section-recaudacion">
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn ptab active" onclick="setPeriod('semana',this)">📅 Última semana</button>
+        <button class="btn ptab" onclick="setPeriod('mes',this)">📆 Este mes</button>
+        <button class="btn ptab" onclick="setPeriod('todo',this)">🗓 Todo el historial</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+        <div class="kpi-card teal">
+          <div class="kpi-label">Total período</div>
+          <div class="kpi-value" id="r-total">$0</div>
+        </div>
+        <div class="kpi-card yellow">
+          <div class="kpi-label">Promedio diario</div>
+          <div class="kpi-value" id="r-prom">$0</div>
+        </div>
+        <div class="kpi-card red">
+          <div class="kpi-label">🏆 Mejor día</div>
+          <div class="kpi-value" id="r-mejor">$0</div>
+          <div class="kpi-sub" id="r-mejor-fecha">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">📍 Sede activa</div>
+          <div style="font-family:'Bebas Neue';font-size:22px;color:var(--sc-yellow);margin-top:6px" id="r-sede-label">—</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Recaudación por día</div>
+          <div class="bar-chart" id="chart-recaud"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Por concepto</div>
+          <div id="r-conceptos"></div>
+        </div>
+      </div>
+      <div class="two-col" style="margin-top:14px">
+        <div class="card">
+          <div class="card-title">Por método de pago</div>
+          <div id="r-metodos"></div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:120px">
+          <div style="font-size:36px;margin-bottom:8px">📊</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Informe para el contador</div>
+          <div style="font-size:12px;color:var(--muted);margin:6px 0 14px;text-align:center">Exportá los datos en Excel para el período seleccionado</div>
+          <button class="btn btn-outline btn-sm" onclick="goTo('exportar',document.getElementById('nav-exportar'))">📤 Ir a exportar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ HISTORIAL ════════ -->
+    <div class="section" id="section-historial">
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="card-title" style="margin-bottom:0">Historial de ventas <span id="h-count" style="color:var(--sc-yellow);font-size:14px"></span></div>
+          <div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap">
+            <input type="text" id="h-q" placeholder="🔍 Buscar..." oninput="renderHistorial()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none;width:180px">
+            <select id="h-sede" onchange="renderHistorial()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+              <option value="">Todas las sedes</option>
+              <option value="VIA 24">VIA 24</option>
+              <option value="BARRIO NORTE">Barrio Norte</option>
+            </select>
+            <select id="h-concepto" onchange="renderHistorial()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+              <option value="">Todos</option>
+              <option value="membresia">Membresía</option>
+              <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
+              <option value="pase_diario">Pase diario</option>
+              <option value="locker">Locker</option>
+              <option value="producto">Productos</option>
+              <option value="egreso">Egreso</option>
+              <option value="retiro">Retiro</option>
+            </select>
+            <select id="h-metodo" onchange="renderHistorial()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+              <option value="">Todos los métodos</option>
+              <option value="efectivo">💵 Efectivo</option>
+              <option value="transferencia">🏦 Transferencia</option>
+              <option value="debito">💳 Débito</option>
+              <option value="credito">💳 Crédito</option>
+              <option value="qr">📱 QR</option>
+            </select>
+            <input type="date" id="h-desde" onchange="renderHistorial()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+            <input type="date" id="h-hasta" onchange="renderHistorial()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha / Nro</th><th>Sede</th><th>Cliente</th><th>Concepto</th>
+                <th>Efect.</th><th>Transf.</th><th>Déb.</th><th>Créd.</th><th>QR</th>
+                <th>Total</th><th style="width:100px"></th>
+              </tr>
+            </thead>
+            <tbody id="hist-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ MEMBRESÍAS ════════ -->
+    <div class="section" id="section-socios">
+      <div style="max-width:980px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card teal" onclick="document.getElementById('ss-estado').value='aldia';renderSocios()" style="cursor:pointer">
+            <div class="kpi-label">✅ Al día</div>
+            <div class="kpi-value" id="s-aldia">0</div>
+            <div class="kpi-sub">Membresía vigente</div>
+          </div>
+          <div class="kpi-card yellow" onclick="document.getElementById('ss-estado').value='por_vencer';renderSocios()" style="cursor:pointer">
+            <div class="kpi-label">⏰ Por vencer</div>
+            <div class="kpi-value" id="s-por-vencer">0</div>
+            <div class="kpi-sub">Próximos 7 días</div>
+          </div>
+          <div class="kpi-card red" onclick="document.getElementById('ss-estado').value='vencido';renderSocios()" style="cursor:pointer">
+            <div class="kpi-label">❌ Vencidos</div>
+            <div class="kpi-value" id="s-vencidos">0</div>
+            <div class="kpi-sub">Sin membresía activa</div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+            <div class="card-title" style="margin-bottom:0">Membresías <span id="ss-count" style="color:var(--teal);font-size:14px"></span></div>
+            <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+              <input type="text" id="ss-q" placeholder="🔍 Buscar por nombre..." oninput="renderSocios()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none;width:200px">
+              <select id="ss-estado" onchange="renderSocios()" style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+                <option value="">Todos</option>
+                <option value="aldia">✅ Al día</option>
+                <option value="por_vencer">⏰ Por vencer</option>
+                <option value="vencido">❌ Vencido</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nombre</th><th>Último pago</th><th>Monto</th><th>Método</th><th>Vence</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="socios-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ LOCKERS ════════ -->
+    <div class="section" id="section-lockers">
+      <div style="max-width:980px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card teal">
+            <div class="kpi-label">🟢 Libres</div>
+            <div class="kpi-value" id="l-libres">0</div>
+            <div class="kpi-sub" id="l-libres-sub">— H · — M</div>
+          </div>
+          <div class="kpi-card red">
+            <div class="kpi-label">🔴 Ocupados</div>
+            <div class="kpi-value" id="l-ocupados">0</div>
+            <div class="kpi-sub" id="l-ocupados-sub">— H · — M</div>
+          </div>
+          <div class="kpi-card yellow">
+            <div class="kpi-label">⚠️ Vencen pronto</div>
+            <div class="kpi-value" id="l-vence">0</div>
+            <div class="kpi-sub">En los próximos 7 días</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">📦 Total</div>
+            <div class="kpi-value" id="l-total">0</div>
+            <div class="kpi-sub">Lockers en sistema</div>
+          </div>
+        </div>
+        <div class="two-col" style="align-items:start">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+              <div class="card-title" style="margin-bottom:0">👨 Hombres</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="number" id="cant-lockersH" placeholder="Cant." min="1" style="width:72px;padding:6px 8px;background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+                <button class="btn btn-outline btn-sm" onclick="ajustarLockers('H')">Ajustar</button>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:10px">🟢 Libre &nbsp;&nbsp; 🔴 Ocupado &nbsp;&nbsp; 🟡 Vence pronto</div>
+            <div class="lockers-grid" id="lockers-hombres"></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+              <div class="card-title" style="margin-bottom:0">👩 Mujeres</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="number" id="cant-lockersM" placeholder="Cant." min="1" style="width:72px;padding:6px 8px;background:var(--s2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+                <button class="btn btn-outline btn-sm" onclick="ajustarLockers('M')">Ajustar</button>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:10px">🟢 Libre &nbsp;&nbsp; 🔴 Ocupado &nbsp;&nbsp; 🟡 Vence pronto</div>
+            <div class="lockers-grid" id="lockers-mujeres"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ REGISTRAR ════════ -->
+    <div class="section" id="section-registrar">
+      <div class="card" style="max-width:700px">
+        <div class="card-title">Nueva transacción</div>
+
+        <!-- ACCESOS RÁPIDOS -->
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">
+          ⚡ Accesos rápidos
+        </div>
+        <div class="quickbtn-grid" id="quick-grid"></div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Cliente / Nombre <span style="color:var(--muted);font-size:10px;font-weight:400">(opcional)</span></label>
+            <div class="field-wrap">
+              <input type="text" id="f-cliente" placeholder="Opcional — Ej: Juan García"
+                     autocomplete="off"
+                     oninput="buscarSocioInput(this.value)"
+                     onblur="setTimeout(()=>cerrarDropdown(),200)">
+              <datalist id="socios-list"></datalist>
+              <div class="socio-dropdown" id="socio-dropdown" style="display:none"></div>
+            </div>
+          </div>
+          <input type="hidden" id="f-fecha" value="">
+              <div id="f-fecha-display" style="font-size:12px;color:var(--muted);margin-top:4px;text-transform:capitalize"></div>
+          <div class="form-group" style="position:relative">
+            <label>Concepto</label>
+            <div id="f-concepto-display"
+              onclick="abrirPickerConcepto()"
+              style="display:flex;align-items:center;justify-content:space-between;
+                padding:10px 14px;border-radius:8px;border:1px solid var(--border);
+                background:var(--s2);cursor:pointer;font-size:13px;user-select:none;
+                transition:border-color .15s"
+              onmouseover="this.style.borderColor='var(--accent)'"
+              onmouseout="this.style.borderColor='var(--border)'">
+              <span id="f-concepto-label">Seleccionar concepto...</span>
+              <span style="font-size:10px;color:var(--muted)">▼</span>
+            </div>
+            <input type="hidden" id="f-concepto" value="">
+            <div id="concepto-picker-dropdown"
+              style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);
+                background:var(--s1);border:1px solid var(--border);border-radius:12px;
+                box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:999;overflow:hidden;max-height:320px">
+              <div style="padding:8px 10px;border-bottom:1px solid var(--border)">
+                <input type="text" id="concepto-search" placeholder="🔍 Buscar concepto..."
+                  oninput="filtrarPickerConcepto(this.value)"
+                  style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;
+                    border:1px solid var(--border);background:var(--s2);color:var(--text);
+                    font-family:inherit;font-size:13px;outline:none">
+              </div>
+              <div id="concepto-picker-list" style="overflow-y:auto;max-height:250px;padding:6px"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display:flex;align-items:flex-end;gap:10px">
+              <div style="flex:1">
+                <label>Monto ($) <span id="f-monto-hint" style="font-size:10px;color:var(--muted);font-weight:400"></span></label>
+                <input type="number" id="f-monto" placeholder="0" min="0" style="width:100%"
+                  oninput="onMontoManualChange()">
+              </div>
+              <div id="f-unidades-wrap" style="display:none;min-width:72px">
+                <label style="font-size:11px;color:var(--muted)">Unidades</label>
+                <input type="number" id="f-unidades" value="1" min="1" step="1"
+                  style="text-align:center;font-weight:700;font-size:16px;padding:8px 6px;width:100%"
+                  oninput="onUnidadesChange()">
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <label style="margin-bottom:0">Método de pago</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--muted)">
+                <input type="checkbox" id="f-pago-mixto" onchange="togglePagoMixto(this.checked)"
+                  style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer">
+                Pago mixto (2 métodos)
+              </label>
+            </div>
+            <select id="f-metodo" onchange="onPagoMixtoChange()">
+              <option value="efectivo">💵 Efectivo</option>
+              <option value="transferencia">🏦 Transferencia</option>
+              <option value="debito">💳 Débito</option>
+              <option value="credito">💳 Crédito</option>
+              <option value="qr">📱 QR / MercadoPago</option>
+            </select>
+          </div>
+
+          <div id="f-pago-mixto-wrap" style="display:none;margin-bottom:12px">
+            <div style="background:var(--s2);border:1.5px solid var(--accent);border-radius:12px;padding:13px 14px">
+              <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700">✂️ Dividir en dos métodos</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label style="font-size:11px">Método 1</label>
+                  <select id="f-metodo1" style="font-size:12px" onchange="onPagoMixtoChange()">
+                    <option value="efectivo">💵 Efectivo</option>
+                    <option value="transferencia">🏦 Transferencia</option>
+                    <option value="debito">💳 Débito</option>
+                    <option value="credito">💳 Crédito</option>
+                    <option value="qr">📱 QR</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label style="font-size:11px">Monto método 1 ($)</label>
+                  <input type="number" id="f-monto1" placeholder="0" min="0"
+                    style="font-weight:700;border-color:var(--accent)" oninput="onPagoMixtoChange()">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label style="font-size:11px">Método 2</label>
+                  <select id="f-metodo2" style="font-size:12px" onchange="onPagoMixtoChange()">
+                    <option value="transferencia">🏦 Transferencia</option>
+                    <option value="efectivo">💵 Efectivo</option>
+                    <option value="debito">💳 Débito</option>
+                    <option value="credito">💳 Crédito</option>
+                    <option value="qr">📱 QR</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label style="font-size:11px">Monto método 2 ($)</label>
+                  <input type="number" id="f-monto2" placeholder="auto" min="0"
+                    style="font-weight:700;border-color:var(--accent);color:var(--muted)" readonly>
+                </div>
+              </div>
+              <div id="f-mixto-preview" style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;min-height:16px"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Estado de cobro</label>
+            <select id="f-estado" onchange="onEstadoChange()">
+              <option value="cobrado">✅ Cobrado</option>
+              <option value="parcial">💰 Pago parcial</option>
+              <option value="pendiente">⏳ Pendiente</option>
+            </select>
+          </div>
+          <div id="f-parcial-wrap" style="display:none" class="form-group">
+            <label>Monto cobrado ahora <span style="font-size:10px;color:var(--muted)">— el resto queda como deuda</span></label>
+            <input type="number" id="f-monto-parcial" placeholder="0" min="0"
+              style="border-color:var(--sc-yellow)"
+              oninput="calcularDeuda()">
+            <div id="f-deuda-preview" style="font-size:12px;color:var(--sc-yellow);margin-top:6px;display:none"></div>
+          </div>
+          <div id="f-tel-deuda-wrap" style="display:none" class="form-group">
+            <label style="color:var(--sc-yellow)">📱 Teléfono del cliente <span style="font-size:10px;font-weight:600">— para recordarle la deuda por WhatsApp</span></label>
+            <input type="tel" id="f-tel-deuda" placeholder="Ej: 3815000000"
+              style="border-color:var(--sc-yellow);font-size:15px"
+              oninput="this.value=this.value.replace(/[^0-9+]/g,'')">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Sin 0 ni 15 — solo el número (ej: 3815000000)</div>
+          </div>
+          <div class="form-group full" style="background:var(--s2);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Sede:</span>
+            <span id="f-sede-label" style="font-weight:900;color:var(--accent);font-size:20px;letter-spacing:1px">VIA 24</span>
+          </div>
+          <div class="form-group full">
+            <label>Observaciones</label>
+            <input type="text" id="f-obs" placeholder="Notas opcionales...">
+          </div>
+        </div>
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn btn-accent" onclick="registrarVenta()">💾 Guardar venta</button>
+          <button class="btn btn-outline" onclick="limpiarForm()">Limpiar</button>
+        </div>
+
+        <!-- Confirmación post-venta con botón PDF -->
+        <div id="post-venta-confirm" style="display:none;margin-top:16px;
+          background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);
+          border-radius:12px;padding:16px;display:none;align-items:center;gap:14px">
+          <div style="font-size:28px">✅</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px" id="pv-numero"></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px" id="pv-resumen"></div>
+          </div>
+          <button onclick="descargarTicketPDF()" style="
+            display:flex;flex-direction:column;align-items:center;gap:4px;
+            background:var(--s2);border:1px solid var(--border);border-radius:10px;
+            padding:10px 14px;cursor:pointer;color:var(--text);transition:all .18s;
+            font-family:'DM Sans';
+          " onmouseover="this.style.borderColor='var(--sc-red)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:22px">🖨️</span>
+            <span style="font-size:10px;font-weight:600">Bajar PDF</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ PRODUCTOS / PRECIOS / STOCK ════════ -->
+    <div class="section" id="section-productos">
+
+      <!-- ALERTAS DE STOCK -->
+      <div id="stock-alertas" style="margin-bottom:16px"></div>
+
+      <div class="two-col" style="align-items:start">
+
+        <!-- COLUMNA IZQUIERDA: Ranking + Creador -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          <!-- RANKING -->
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+              <div class="card-title" style="margin-bottom:0">🏆 Ranking de productos</div>
+              <div style="display:flex;gap:6px">
+                <select id="rank-periodo" onchange="renderRanking()"
+                  style="background:var(--s2);border:1px solid var(--border);border-radius:7px;
+                    padding:4px 8px;color:var(--text);font-family:'DM Sans';font-size:11px;outline:none">
+                  <option value="mes">Este mes</option>
+                  <option value="semana">Esta semana</option>
+                  <option value="hoy">Hoy</option>
+                  <option value="todo">Histórico</option>
+                </select>
+                <select id="rank-sede" onchange="renderRanking()"
+                  style="background:var(--s2);border:1px solid var(--border);border-radius:7px;
+                    padding:4px 8px;color:var(--text);font-family:'DM Sans';font-size:11px;outline:none">
+                  <option value="">Ambas sedes</option>
+                  <option value="VIA 24">VIA 24</option>
+                  <option value="BARRIO NORTE">Barrio Norte</option>
+                </select>
+              </div>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:14px">Solo productos físicos — sin membresías ni servicios</p>
+            <div id="ranking-lista"></div>
+          </div>
+
+          <!-- CREADOR -->
+          <div class="card" style="position:sticky;top:20px">
+            <div class="card-title">➕ Nuevo producto / servicio</div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label>Ícono <span style="font-size:10px;color:var(--muted)">(emoji)</span></label>
+              <input type="text" id="np-icon" placeholder="🏋️" maxlength="4"
+                style="font-size:22px;text-align:center;padding:10px;width:80px">
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label>Nombre</label>
+              <input type="text" id="np-label" placeholder="Ej: Proteína Whey">
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label>Descripción <span style="font-size:10px;color:var(--muted)">(opcional)</span></label>
+              <input type="text" id="np-desc" placeholder="Ej: Sachet 30g">
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label>Precio ($)</label>
+              <input type="number" id="np-precio" placeholder="0" min="0">
+            </div>
+            <div class="form-group" style="margin-bottom:12px">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                <input type="checkbox" id="np-fisico"
+                  style="width:16px;height:16px;accent-color:var(--sc-yellow);cursor:pointer"
+                  onchange="document.getElementById('np-stock-wrap').style.display=this.checked?'block':'none'">
+                <span>Producto físico <span style="font-size:10px;color:var(--muted)">(tiene stock)</span></span>
+              </label>
+            </div>
+            <div id="np-stock-wrap" style="display:none;background:var(--s2);border-radius:9px;padding:12px;margin-bottom:12px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label style="font-size:11px">Stock inicial</label>
+                  <input type="number" id="np-stock" placeholder="0" min="0" class="precio-input" style="width:100%">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label style="font-size:11px">Alerta cuando queden</label>
+                  <input type="number" id="np-stockmin" placeholder="5" min="1" class="precio-input" style="width:100%">
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:18px">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+                <input type="checkbox" id="np-rapido" checked
+                  style="width:16px;height:16px;accent-color:var(--sc-yellow);cursor:pointer">
+                <span>Mostrar como acceso rápido</span>
+              </label>
+            </div>
+            <button class="btn btn-accent" onclick="crearProducto()" style="width:100%;justify-content:center">
+              ➕ Agregar
+            </button>
+          </div>
+
+        </div><!-- /columna-izq -->
+
+        <!-- COLUMNA DERECHA: Catálogo editable -->
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div class="card-title" style="margin-bottom:0">🏷️ Catálogo completo</div>
+              <button class="btn btn-accent btn-sm" onclick="guardarPrecios()">💾 Guardar cambios</button>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-top:6px">
+              Modificá precio y descripción directamente. El ✅ activa el acceso rápido en nueva venta.
+            </p>
+          </div>
+
+          <!-- Header -->
+          <div style="display:grid;grid-template-columns:1fr 90px 44px 44px 36px 36px;gap:8px;
+            padding:4px 14px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">
+            <span>Producto / servicio</span>
+            <span style="text-align:right">Precio</span>
+            <span style="text-align:center" title="Acceso rápido en nueva venta">⚡</span>
+            <span style="text-align:center" title="Venta rápida en dashboard">🏠</span>
+            <span></span>
+            <span></span>
+          </div>
+
+          <div id="productos-lista"></div>
+
+          <div style="margin-top:12px;font-size:11px;color:var(--muted);padding:0 4px">
+            💡 🔒 = predeterminado del sistema, no se puede eliminar.
+          </div>
+        </div><!-- /columna-der -->
+
+      </div>
+    </div>
+
+    <!-- ════════ DEUDAS ════════ -->
+    <div class="section" id="section-deudas">
+      <div style="max-width:800px">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+          <div class="kpi-card red">
+            <div class="kpi-label">💳 Total adeudado</div>
+            <div class="kpi-value" id="deu-total">$0</div>
+            <div class="kpi-sub" id="deu-count">0 deudas</div>
+          </div>
+          <div class="kpi-card yellow">
+            <div class="kpi-label">⏳ Pagos parciales</div>
+            <div class="kpi-value" id="deu-parcial">$0</div>
+            <div class="kpi-sub" id="deu-parcial-count">0 socios</div>
+          </div>
+          <div class="kpi-card teal">
+            <div class="kpi-label">📋 Pendientes</div>
+            <div class="kpi-value" id="deu-pendiente">$0</div>
+            <div class="kpi-sub" id="deu-pendiente-count">0 socios</div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+            <div class="card-title" style="margin-bottom:0">💳 Detalle de deudas</div>
+            <div style="display:flex;gap:8px">
+              <select id="deu-filtro" onchange="renderDeudas()"
+                style="background:var(--s2);border:1px solid var(--border);border-radius:7px;
+                  padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+                <option value="">Todas</option>
+                <option value="parcial">Solo parciales</option>
+                <option value="pendiente">Solo pendientes</option>
+              </select>
+            </div>
+          </div>
+          <div id="deudas-lista"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ LIBRO DE EGRESOS ════════ -->
+    <div class="section" id="section-egresos">
+      <div style="max-width:860px">
+
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="egreso-kpi">
+            <div style="font-size:10px;color:var(--sc-red);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Mes actual</div>
+            <div style="font-family:'Bebas Neue';font-size:32px;line-height:1" id="eg-kpi-mes">$0</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px" id="eg-kpi-mes-sub">0 egresos</div>
+          </div>
+          <div class="egreso-kpi">
+            <div style="font-size:10px;color:var(--sc-red);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Pendientes</div>
+            <div style="font-family:'Bebas Neue';font-size:32px;line-height:1" id="eg-kpi-pend">$0</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px" id="eg-kpi-pend-sub">0 sin pagar</div>
+          </div>
+          <div class="egreso-kpi">
+            <div style="font-size:10px;color:var(--sc-yellow);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Vencen en 7 días</div>
+            <div style="font-family:'Bebas Neue';font-size:32px;line-height:1;color:var(--sc-yellow)" id="eg-kpi-venc">0</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px">Requieren atención</div>
+          </div>
+          <div class="egreso-kpi">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Anual acumulado</div>
+            <div style="font-family:'Bebas Neue';font-size:32px;line-height:1;color:var(--muted)" id="eg-kpi-anual">$0</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:3px" id="eg-kpi-anual-sub">pagados</div>
+          </div>
+        </div>
+
+        <!-- Alertas de vencimiento -->
+        <div id="eg-alertas-wrap" style="margin-bottom:16px"></div>
+
+        <!-- Filtros + botón nuevo -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <select id="eg-filtro-estado" onchange="renderEgresos()"
+            style="background:var(--s2);border:1px solid var(--border);border-radius:8px;
+              padding:7px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="pagado">Pagados</option>
+          </select>
+          <select id="eg-filtro-cat" onchange="renderEgresos()"
+            style="background:var(--s2);border:1px solid var(--border);border-radius:8px;
+              padding:7px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+            <option value="">Todas las categorías</option>
+            <option value="sueldo">Sueldos</option>
+            <option value="alquiler">Alquiler / Expensas</option>
+            <option value="servicios">Servicios</option>
+            <option value="proveedores">Proveedores</option>
+            <option value="impuestos">Impuestos</option>
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="otro">Otro</option>
+          </select>
+          <select id="eg-filtro-mes" onchange="renderEgresos()"
+            style="background:var(--s2);border:1px solid var(--border);border-radius:8px;
+              padding:7px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+            <option value="">Todos los meses</option>
+          </select>
+          <input type="text" id="eg-search" placeholder="🔍 Buscar..." oninput="renderEgresos()"
+            style="flex:1;min-width:140px;background:var(--s2);border:1px solid var(--border);
+              border-radius:8px;padding:7px 12px;color:var(--text);font-family:'DM Sans';
+              font-size:12px;outline:none">
+          <button class="btn btn-accent" onclick="abrirNuevoEgreso()"
+            style="white-space:nowrap;gap:6px">
+            ➕ Nuevo egreso
+          </button>
+        </div>
+
+        <!-- Lista -->
+        <div id="eg-lista"></div>
+
+      </div>
+    </div>
+
+    <!-- HISTORIAL WA -->
+    <div class="section" id="section-wa">
+      <div style="max-width:780px">
+
+        <!-- COPIAR Y PEGAR CONTACTOS -->
+        <div class="card" style="margin-bottom:16px;border-color:rgba(37,211,102,.3)">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div style="width:42px;height:42px;border-radius:12px;background:#25D366;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">&#128241;</div>
+            <div>
+              <div style="font-weight:800;font-size:15px">Buscar contacto</div>
+              <div style="font-size:11px;color:var(--muted)" id="vcf-count-label2">Pega nombres y telefonos para buscar</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);background:var(--s2);border-radius:8px;padding:10px 13px;margin-bottom:14px;line-height:1.7">
+            Pega directamente desde cualquier listado. Formato libre:<br>
+            <strong>Juan Perez 3815000000</strong> &nbsp;o&nbsp; <strong>Maria Garcia - 381 500-0000</strong>
+          </div>
+          <textarea id="contactos-paste" rows="5"
+            placeholder="Pega nombres y telefonos aca, uno por linea..." oninput="procesarContactosPegados()"
+            style="width:100%;box-sizing:border-box;padding:11px 14px;border-radius:9px;
+              border:1.5px solid #25D366;background:var(--s2);color:var(--text);
+              font-family:inherit;font-size:13px;outline:none;resize:vertical;line-height:1.6;min-height:90px"></textarea>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+            <input type="text" id="vcf-search" placeholder="Buscar entre los contactos pegados..." oninput="buscarContacto()"
+              style="flex:1;min-width:180px;padding:10px 14px;border-radius:9px;
+                border:1px solid var(--border);background:var(--s2);color:var(--text);
+                font-family:inherit;font-size:13px;outline:none">
+            <button class="btn btn-outline btn-sm" onclick="limpiarContactosPegados()">&#128465; Limpiar</button>
+          </div>
+          <div id="vcf-count-label3" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+          <div id="vcf-results" style="margin-top:10px;max-height:360px;overflow-y:auto"></div>
+        </div>
+
+        <!-- HISTORIAL MENSAJES ENVIADOS -->
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+            <div class="card-title" style="margin-bottom:0">&#128172; Historial de mensajes enviados</div>
+            <button class="btn btn-outline btn-sm" onclick="limpiarWAlog()">Limpiar historial</button>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Cada mensaje WA enviado desde la app queda registrado aca.</p>
+          <input type="text" id="wa-search" placeholder="Buscar por nombre..." oninput="renderWAlog()"
+            style="width:100%;box-sizing:border-box;padding:9px 13px;border-radius:8px;
+              border:1px solid var(--border);background:var(--s2);color:var(--text);
+              font-family:inherit;font-size:13px;outline:none;margin-bottom:12px">
+          <div id="wa-log-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════ CALENDARIO VENCIMIENTOS ════════ -->
+    <div class="section" id="section-calendario">
+      <div style="max-width:820px">
+
+        <!-- Navegación mes -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="cal-nav">
+            <button onclick="calMes(-1)">← Anterior</button>
+            <div>
+              <div style="font-family:'Bebas Neue';font-size:24px;text-align:center" id="cal-titulo"></div>
+              <div style="font-size:11px;color:var(--muted);text-align:center" id="cal-total-mes"></div>
+            </div>
+            <button onclick="calMes(+1)">Siguiente →</button>
+          </div>
+
+          <!-- Días de la semana -->
+          <div class="cal-grid" id="cal-headers">
+            <div class="cal-header">DOM</div>
+            <div class="cal-header">LUN</div>
+            <div class="cal-header">MAR</div>
+            <div class="cal-header">MIÉ</div>
+            <div class="cal-header">JUE</div>
+            <div class="cal-header">VIE</div>
+            <div class="cal-header">SÁB</div>
+          </div>
+          <div class="cal-grid" id="cal-grid" style="margin-top:4px"></div>
+
+          <!-- Leyenda -->
+          <div class="cal-leyenda">
+            <span><span class="cal-leyenda-dot" style="background:rgba(245,193,0,.3)"></span>1-2 vencimientos</span>
+            <span><span class="cal-leyenda-dot" style="background:rgba(245,193,0,.6)"></span>3-5 vencimientos</span>
+            <span><span class="cal-leyenda-dot" style="background:rgba(204,0,21,.3)"></span>6-9 vencimientos</span>
+            <span><span class="cal-leyenda-dot" style="background:rgba(204,0,21,.6)"></span>10+ vencimientos</span>
+            <span><span class="cal-leyenda-dot" style="background:transparent;border:1px solid var(--sc-red)"></span>Hoy</span>
+          </div>
+        </div>
+
+        <!-- Detalle del día seleccionado -->
+        <div class="card" id="cal-detalle" style="display:none">
+          <div class="card-title" id="cal-detalle-titulo">Vencimientos del día</div>
+          <div id="cal-detalle-lista"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════ ALERTAS ════════ -->
+    <div class="section" id="section-alertas">
+      <div style="max-width:1100px">
+        <div style="display:grid;grid-template-columns:1fr 280px;gap:18px;align-items:start" id="alertas-grid">
+        <div><!-- COLUMNA PRINCIPAL -->
+
+        <!-- KPIs alertas -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+          <div class="kpi-card red">
+            <div class="kpi-label">🔴 Vencidos</div>
+            <div class="kpi-value" id="crm-kpi-vencidos">0</div>
+            <div class="kpi-sub">Membresía expirada</div>
+          </div>
+          <div class="kpi-card yellow">
+            <div class="kpi-label">🟡 Vencen en 5 días</div>
+            <div class="kpi-value" id="crm-kpi-proximos">0</div>
+            <div class="kpi-sub">Requieren seguimiento</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">✅ Contactados hoy</div>
+            <div class="kpi-value" id="crm-kpi-contactados">0</div>
+            <div class="kpi-sub">WA enviado hoy</div>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="crm-filtros" id="crm-filtros" style="flex-wrap:wrap;gap:6px;align-items:center">
+          <button class="crm-filtro-btn active" onclick="setCrmFiltro('todos',this)">Todos</button>
+          <button class="crm-filtro-btn" onclick="setCrmFiltro('vencido',this)">🔴 Vencidos</button>
+          <button class="crm-filtro-btn" onclick="setCrmFiltro('urgente',this)">🟡 Vencen en 2 días</button>
+          <button class="crm-filtro-btn" onclick="setCrmFiltro('proximo',this)">🟢 Vencen en 3-5 días</button>
+          <button class="crm-filtro-btn" onclick="setCrmFiltro('sin_contacto',this)">📵 Sin contactar</button>
+          <button class="crm-filtro-btn" onclick="setCrmFiltro('resuelto',this)">🔒 Resueltos</button>
+          <select id="crm-sede" onchange="renderAlertas()"
+            style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none;margin-left:auto">
+            <option value="">Ambas sedes</option>
+            <option value="VIA 24">VIA 24</option>
+            <option value="BARRIO NORTE">BARRIO NORTE</option>
+          </select>
+        </div>
+
+        <!-- Buscador -->
+        <div style="margin-bottom:14px">
+          <input type="text" id="crm-search" placeholder="🔍 Buscar socio..."
+            oninput="renderAlertas()"
+            style="width:100%;background:var(--s2);border:1px solid var(--border);
+              border-radius:9px;padding:10px 14px;color:var(--text);
+              font-family:'DM Sans';font-size:13px;outline:none">
+        </div>
+
+        <div id="alertas-container"></div>
+
+        </div><!-- FIN COLUMNA PRINCIPAL -->
+
+        <!-- COLUMNA RANKING CRM -->
+        <div style="position:sticky;top:20px;display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:6px">
+              <div class="card-title" style="margin-bottom:0">📊 Ranking CRM</div>
+              <select id="crm-rank-periodo" onchange="renderCRMRanking()"
+                style="background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:4px 8px;color:var(--text);font-size:11px;font-family:'DM Sans';outline:none">
+                <option value="hoy">Hoy</option>
+                <option value="semana">Semana</option>
+                <option value="mes" selected>Este mes</option>
+              </select>
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:14px">Acciones rápidas registradas</div>
+            <div id="crm-ranking-wrap">
+              <div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Sin datos aún</div>
+            </div>
+          </div>
+
+          <!-- Mini guía -->
+          <div class="card" style="background:var(--s2)">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:700">¿Cómo funciona?</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.6">
+              En cada alerta, al fondo de la card, aparecen 3 botones de acción rápida:<br><br>
+              <span style="color:var(--sc-red)">🚫 No insistir</span> — oculta por 30 días<br>
+              <span style="color:var(--green)">✅ Renovado</span> — marca renovación y oculta<br>
+              <span style="color:#F59E0B">🎉 Volvió!</span> — celebra y oculta por 30 días
+            </div>
+          </div>
+        </div>
+
+        </div><!-- FIN GRID -->
+      </div>
+    </div>
+
+
+    <!-- ════════ CONFIGURACIÓN DB ════════ -->
+    <div class="section" id="section-db">
+      <div style="max-width:680px">
+
+        <div id="db-banner-top" class="db-banner off">
+          ⚪ Sin conectar — los datos se guardan solo en este navegador
+        </div>
+
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-title">🔗 Conexión con Google Sheets</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">
+            Conectá la app a tu planilla para sincronizar datos entre VIA 24 y BARRIO NORTE en tiempo real.<br>
+            <span style="color:var(--sc-yellow)">Ver la guía Word adjunta para el paso a paso completo.</span>
+          </p>
+
+          <div class="form-group" style="margin-bottom:14px">
+            <label>ID de la planilla de Google Sheets</label>
+            <input type="text" id="db-sheet-id"
+              placeholder="Ej: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+              style="font-family:monospace;font-size:12px">
+          </div>
+          <div class="form-group" style="margin-bottom:18px">
+            <label>Credenciales JSON (contenido del archivo .json descargado)</label>
+            <textarea id="db-credentials" rows="5"
+              placeholder='Pegá acá el contenido completo del archivo JSON...'
+              style="background:var(--s2);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:9px;font-family:monospace;font-size:11px;width:100%;resize:vertical;outline:none"></textarea>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-accent" onclick="guardarConexionDB()">💾 Guardar y conectar</button>
+            <button class="btn btn-outline" onclick="testConexionDB()">🔌 Probar conexión</button>
+            <button class="btn btn-danger btn-sm" onclick="desconectarDB()">Desconectar</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+            <div class="card-title" style="margin-bottom:0">📦 Copias de seguridad</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="backup-auto-dot" style="width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block"></span>
+              <span style="font-size:11px;color:var(--muted)" id="backup-auto-label">Backup automático</span>
+              <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer">
+                <input type="checkbox" id="backup-auto-toggle" style="opacity:0;width:0;height:0"
+                  onchange="toggleBackupAuto(this.checked)">
+                <span id="backup-auto-slider" style="position:absolute;inset:0;background:var(--border);border-radius:22px;transition:.3s">
+                  <span style="position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;display:block" id="backup-slider-knob"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Fila de backups por tipo -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px">
+
+            <!-- VIA 24 -->
+            <div style="background:var(--s2);border-radius:10px;padding:13px 14px;border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+                <span style="font-size:16px">🏢</span>
+                <span style="font-size:12px;font-weight:700">VIA 24</span>
+                <span id="bk-dot-v24" style="margin-left:auto;font-size:16px">⚪</span>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+                Último: <span id="bk-last-v24" style="color:var(--text)">Nunca</span>
+              </div>
+              <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center;font-size:11px"
+                onclick="descargarBackup('VIA 24')">
+                💾 Descargar
+              </button>
+            </div>
+
+            <!-- BARRIO NORTE -->
+            <div style="background:var(--s2);border-radius:10px;padding:13px 14px;border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+                <span style="font-size:16px">🏟️</span>
+                <span style="font-size:12px;font-weight:700">BARRIO NORTE</span>
+                <span id="bk-dot-bn" style="margin-left:auto;font-size:16px">⚪</span>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+                Último: <span id="bk-last-bn" style="color:var(--text)">Nunca</span>
+              </div>
+              <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center;font-size:11px"
+                onclick="descargarBackup('BARRIO NORTE')">
+                💾 Descargar
+              </button>
+            </div>
+
+            <!-- HISTÓRICO COMPLETO -->
+            <div style="background:var(--s2);border-radius:10px;padding:13px 14px;border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+                <span style="font-size:16px">📚</span>
+                <span style="font-size:12px;font-weight:700">Histórico</span>
+                <span id="bk-dot-hist" style="margin-left:auto;font-size:16px">⚪</span>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+                Último: <span id="bk-last-hist" style="color:var(--text)">Nunca</span>
+              </div>
+              <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center;font-size:11px"
+                onclick="descargarBackup('HISTORICO')">
+                💾 Descargar
+              </button>
+            </div>
+
+            <!-- CONFIGURACIÓN -->
+            <div style="background:var(--s2);border-radius:10px;padding:13px 14px;border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+                <span style="font-size:16px">⚙️</span>
+                <span style="font-size:12px;font-weight:700">Configuración</span>
+                <span id="bk-dot-conf" style="margin-left:auto;font-size:16px">⚪</span>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+                Último: <span id="bk-last-conf" style="color:var(--text)">Nunca</span>
+              </div>
+              <button class="btn btn-outline btn-sm" style="width:100%;justify-content:center;font-size:11px"
+                onclick="descargarBackup('CONFIG')">
+                💾 Descargar
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Botón backup todo + restaurar -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-accent" onclick="descargarTodosLosBackups()"
+              style="flex:1;justify-content:center;min-width:180px">
+              📥 Descargar todos los backups
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('file-backup').click()"
+              style="white-space:nowrap">
+              📂 Restaurar backup
+            </button>
+          </div>
+          <input type="file" id="file-backup" accept=".json" style="display:none"
+            onchange="restaurarBackupV2(this.files[0]);this.value=''">
+
+          <div style="font-size:10px;color:var(--muted);line-height:1.7;padding:10px 12px;background:var(--s2);border-radius:8px">
+            🟢 <strong style="color:var(--text)">Backup automático activado:</strong> descarga los 4 archivos una vez por día al abrir la app.<br>
+            ⚪ <strong style="color:var(--text)">Sin backup hoy:</strong> el indicador cambia a verde cuando se hace el backup del día.<br>
+            💡 Guardá los archivos en Google Drive o un pendrive para tener respaldo externo.
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px" id="db-sync-card">
+          <div class="card-title">🔄 Sincronización</div>
+          <div id="db-sync-status">
+            <div class="sync-row">
+              <span>Última sincronización</span>
+              <span id="db-last-sync" style="color:var(--muted)">Nunca</span>
+            </div>
+            <div class="sync-row">
+              <span>Ventas en Sheets</span>
+              <span id="db-count-sheets" style="color:var(--teal)">—</span>
+            </div>
+            <div class="sync-row">
+              <span>Ventas locales</span>
+              <span id="db-count-local" style="color:var(--accent)">—</span>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-teal btn-sm" onclick="sincronizarAhora()">⬆️ Subir datos locales a Sheets</button>
+            <button class="btn btn-outline btn-sm" onclick="descargarDeSheets()">⬇️ Descargar desde Sheets</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📋 Cómo funciona</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.8">
+            <div style="margin-bottom:8px">🟢 <strong style="color:var(--text)">Conectado:</strong> cada venta nueva se guarda directo en Google Sheets + copia local como respaldo.</div>
+            <div style="margin-bottom:8px">🔵 <strong style="color:var(--text)">Sin conexión momentánea:</strong> se guarda local y se sube automáticamente cuando vuelve internet.</div>
+            <div style="margin-bottom:8px">⚪ <strong style="color:var(--text)">Sin configurar:</strong> solo localStorage, no se comparte entre computadoras.</div>
+            <div style="margin-top:14px;padding:12px;background:var(--s2);border-radius:8px;font-size:12px">
+              💡 <strong style="color:var(--sc-yellow)">El contador</strong> puede ver la planilla directo desde Google Sheets con acceso de solo lectura.
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ── PLANILLA PARA EL CONTADOR ── -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-title">📊 Planilla para el contador</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            Exportá un archivo <strong style="color:var(--text)">.xlsx</strong> con ingresos, egresos y resumen
+            para enviarle al contador. Incluye 4 pestañas: Ingresos · Egresos · Egresos registrados · Resumen.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Desde</label>
+              <input type="date" id="cont-desde" style="width:100%">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Hasta</label>
+              <input type="date" id="cont-hasta" style="width:100%">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>Sede</label>
+              <select id="cont-sede" style="width:100%">
+                <option value="">Todas</option>
+                <option value="VIA 24">VIA 24</option>
+                <option value="BARRIO NORTE">BARRIO NORTE</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-accent" onclick="exportarPlanillaContador()">
+            📥 Descargar planilla .xlsx
+          </button>
+        </div>
+
+        <!-- ── CAMBIAR CONTRASEÑA ── -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-title">🔐 Contraseña de administrador</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+            Cambiá la contraseña de acceso al panel de administrador.
+          </p>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Contraseña actual</label>
+            <input type="password" id="pass-actual" placeholder="••••••"
+              style="background:var(--s2);border:1px solid var(--border);border-radius:8px;
+                padding:9px 12px;color:var(--text);font-family:'DM Sans';width:100%;outline:none">
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>Nueva contraseña</label>
+            <input type="password" id="pass-nueva" placeholder="••••••"
+              style="background:var(--s2);border:1px solid var(--border);border-radius:8px;
+                padding:9px 12px;color:var(--text);font-family:'DM Sans';width:100%;outline:none">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>Repetir nueva contraseña</label>
+            <input type="password" id="pass-nueva2" placeholder="••••••"
+              style="background:var(--s2);border:1px solid var(--border);border-radius:8px;
+                padding:9px 12px;color:var(--text);font-family:'DM Sans';width:100%;outline:none">
+          </div>
+          <button class="btn btn-accent btn-sm" onclick="cambiarContrasena()">🔐 Cambiar contraseña</button>
+        </div>
+
+        <!-- ── ZONA DE PELIGRO ── -->
+        <div class="card" style="border:1px solid rgba(204,0,21,.3);background:rgba(204,0,21,.03)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span style="font-size:22px">⚠️</span>
+            <div class="card-title" style="margin-bottom:0;color:var(--sc-red)">Zona de peligro</div>
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">
+            Estas acciones son <strong style="color:var(--text)">irreversibles</strong>. 
+            Usalas solo para dejar el sistema limpio antes de empezar a operar con datos reales.
+          </p>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;
+              background:var(--s2);border-radius:10px;padding:14px 16px;gap:14px">
+              <div>
+                <div style="font-weight:600;font-size:13px">🗑️ Limpiar datos de ejemplo</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:3px">
+                  Elimina ventas, socios, contactos y notas CRM. Deja lockers y productos configurados.
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm"
+                style="border-color:var(--sc-red);color:var(--sc-red);white-space:nowrap;flex-shrink:0"
+                onclick="confirmarLimpiezaParcial()">
+                Limpiar datos
+              </button>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;
+              background:var(--s2);border-radius:10px;padding:14px 16px;gap:14px">
+              <div>
+                <div style="font-weight:600;font-size:13px">💣 Resetear sistema completo</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:3px">
+                  Borra <strong style="color:var(--text)">absolutamente todo</strong>: ventas, lockers, productos, configuración. El sistema queda como nuevo.
+                </div>
+              </div>
+              <button class="btn btn-sm"
+                style="background:var(--sc-red);color:#fff;border:none;white-space:nowrap;flex-shrink:0;
+                  box-shadow:0 0 14px rgba(204,0,21,.3)"
+                onclick="confirmarResetTotal()">
+                Reset total
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ════════ PACK CAFÉ ════════ -->
+    <div class="section" id="section-pack-cafe">
+          <div style="max-width:900px">
+
+            <!-- CABECERA: nuevo pack + resumen fichas tragadas -->
+            <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;margin-bottom:20px;flex-wrap:wrap">
+              <div>
+                <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Fichas tragadas del mes</div>
+                <div style="font-family:'Bebas Neue';font-size:38px;color:var(--sc-yellow)" id="pc-fichas-tragadas-total">0</div>
+                <div style="font-size:11px;color:var(--muted)" id="pc-fichas-tragadas-sub">Sin fichas tragadas</div>
+              </div>
+              <button class="btn btn-accent" style="padding:12px 22px;font-size:14px;font-weight:700;white-space:nowrap" onclick="abrirNuevoPack()">
+                ☕ + NUEVO PACK
+              </button>
+            </div>
+
+            <!-- FILTROS -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+              <input type="text" id="pc-search" placeholder="🔍 Buscar cliente..." oninput="renderPackCafe()"
+                style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none;min-width:200px">
+              <select id="pc-filtro" onchange="renderPackCafe()"
+                style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+                <option value="activos">Con fichas disponibles</option>
+                <option value="todos">Todos</option>
+                <option value="agotados">Sin fichas</option>
+              </select>
+              <select id="pc-sede-filtro" onchange="renderPackCafe()"
+                style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-family:'DM Sans';font-size:12px;outline:none">
+                <option value="">Ambas sedes</option>
+                <option value="VIA 24">VIA 24</option>
+                <option value="BARRIO NORTE">BARRIO NORTE</option>
+              </select>
+            </div>
+
+            <!-- LISTA DE PACKS -->
+            <div id="pc-lista"></div>
+          </div>
+        </div>
+
+    <!-- ════════ CAMBIO DE TURNO ════════ -->
+    <div class="section" id="section-turnos">
+          <div style="max-width:820px">
+
+            <!-- Turno activo -->
+            <div class="card" style="margin-bottom:18px;border-color:var(--accent)" id="turno-activo-card">
+              <div id="turno-activo-content">
+                <div style="text-align:center;padding:20px;color:var(--muted)">Cargando turno actual...</div>
+              </div>
+            </div>
+
+            <!-- Botón cambio de turno -->
+            <div style="text-align:center;margin-bottom:24px">
+              <button class="btn" onclick="abrirCambioTurno()"
+                style="background:var(--sc-yellow);color:#000;border:none;font-weight:700;font-size:16px;padding:18px 40px;border-radius:14px;letter-spacing:.5px;box-shadow:0 4px 20px rgba(200,168,0,.4)">
+                🔄 CAMBIO DE TURNO
+              </button>
+            </div>
+
+            <!-- Recaudación por turnos HOY -->
+            <div class="card" style="margin-bottom:18px">
+              <div class="card-title">📊 Recaudación por turno — hoy</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px" id="turnos-kpi-hoy">
+                <div class="kpi-card" style="padding:14px">
+                  <div class="kpi-label">🌅 Turno mañana</div>
+                  <div class="kpi-value" style="font-size:26px" id="t-manana">$0</div>
+                  <div class="kpi-sub" id="t-manana-sub">0 ventas</div>
+                </div>
+                <div class="kpi-card" style="padding:14px">
+                  <div class="kpi-label">🌆 Turno tarde</div>
+                  <div class="kpi-value" style="font-size:26px" id="t-tarde">$0</div>
+                  <div class="kpi-sub" id="t-tarde-sub">0 ventas</div>
+                </div>
+                <div class="kpi-card teal" style="padding:14px">
+                  <div class="kpi-label">💰 Total turnos</div>
+                  <div class="kpi-value" style="font-size:26px" id="t-total">$0</div>
+                  <div class="kpi-sub" id="t-total-sub">0 ventas</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Historial de turnos -->
+            <div class="card">
+              <div class="card-title">📋 Historial de turnos</div>
+              <div id="turnos-historial"></div>
+            </div>
+          </div>
+        </div>
+    <!-- ════════ IMPORTAR ════════ -->
+    <div class="section" id="section-importar">
+      <div style="max-width:700px">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">Importar desde Excel</div>
+          <div class="import-zone" id="drop-zone"
+               ondragover="event.preventDefault();this.classList.add('dragover')"
+               ondragleave="this.classList.remove('dragover')"
+               ondrop="handleDrop(event)"
+               onclick="pedirPass('🔒 Importar Excel','Esta acción reemplaza todos los datos actuales.', ()=>document.getElementById('file-input').click())">
+            <div class="import-icon">📊</div>
+            <div class="import-title">Arrastrá tu Recepcion_Drive.xlsx</div>
+            <div class="import-sub">o hacé click para seleccionar el archivo</div>
+            <div class="import-sub" style="margin-top:8px;font-size:11px">Lee hojas de caja, socios y lockers automáticamente</div>
+            <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0]);this.value=''">
+          </div>
+          <div class="import-progress" id="import-progress">
+            <div class="prog-label" id="import-label">Procesando...</div>
+            <div class="prog-bar"><div class="prog-fill" id="import-bar" style="width:0%;background:var(--accent)"></div></div>
+          </div>
+        </div>
+
+        <div class="card" id="import-stats" style="display:none">
+          <div class="card-title">✅ Importación completada</div>
+          <div id="import-results"></div>
+          <div style="margin-top:18px">
+            <button class="btn btn-accent" onclick="goTo('dashboard',document.getElementById('nav-dashboard'))">Ver Dashboard →</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">📱 Importar contactos (nombre + teléfono)</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+            Excel con columnas: <strong>Nombre</strong> y <strong>Teléfono</strong> (sin 0 ni 15, ej: 3816123456)
+          </p>
+          <div class="import-zone" style="padding:24px" onclick="document.getElementById('file-contactos').click()">
+            <div style="font-size:13px;font-weight:600">📋 Seleccionar Excel de contactos</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Columnas: Nombre | Teléfono</div>
+            <input type="file" id="file-contactos" accept=".xlsx,.xls" style="display:none" onchange="importarContactos(this.files[0]);this.value=''">
+          </div>
+          <div id="contactos-status" style="font-size:12px;color:var(--muted);margin-top:10px">
+            Contactos cargados: <strong id="contactos-count">0</strong>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Estado actual de datos</div>
+          <div id="current-data-status"></div>
+        </div>
+
+        <!-- RESET TOTAL -->
+        <div class="card" style="border:2px solid rgba(204,0,21,.3);background:linear-gradient(135deg,rgba(204,0,21,.04),var(--s1))">
+          <div class="card-title" style="color:var(--sc-red)">🗑️ Resetear sistema</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            Borra <strong style="color:var(--text)">todas las ventas, movimientos, socios y lockers</strong>
+            dejando el sistema limpio desde cero.<br>
+            <span style="color:var(--sc-yellow)">Las configuraciones de productos, precios y stock se conservan.</span><br>
+            El próximo comprobante arrancará desde el <strong style="color:var(--text)">N° 0001</strong>.
+          </p>
+          <div style="background:var(--s2);border-radius:10px;padding:14px;margin-bottom:16px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">
+              Se eliminará:
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
+              <span>❌ Todas las ventas registradas</span>
+              <span>❌ Historial de cambios</span>
+              <span>❌ Socios y membresías</span>
+              <span>❌ Retiros de caja</span>
+              <span>❌ Asignación de lockers</span>
+              <span>❌ Contactos WA</span>
+              <span>❌ Notas CRM</span>
+              <span>❌ Numeración de comprobantes</span>
+            </div>
+            <div style="margin-top:10px;font-size:12px">
+              <span style="color:var(--green)">✅ Se conserva: productos, precios, stock, configuración DB</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
+            Para confirmar, escribí <strong style="color:var(--sc-red)">RESETEAR</strong> en el campo:
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" id="reset-confirm-input" placeholder='Escribí "RESETEAR"'
+              style="flex:1;background:var(--s2);border:1px solid rgba(204,0,21,.3);
+                border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans';
+                font-size:13px;outline:none;font-weight:600;letter-spacing:1px"
+              oninput="document.getElementById('btn-reset-exec').disabled = this.value !== 'RESETEAR'">
+            <button id="btn-reset-exec" class="btn" disabled
+              onclick="ejecutarReset()"
+              style="background:var(--sc-red);color:#fff;border:none;padding:10px 20px;
+                font-weight:700;border-radius:8px;cursor:pointer;opacity:.4;transition:opacity .2s"
+              onmouseover="if(!this.disabled)this.style.background='#a80012'"
+              onmouseout="this.style.background='var(--sc-red)'">
+              🗑️ RESETEAR
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ════════ EXPORTAR CONTADOR ════════ -->
+    <div class="section" id="section-exportar">
+      <div style="max-width:680px">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">Informe para el contador</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+            Genera un Excel profesional con resumen anual, detalle mensual, y egresos consolidados.<br>
+            Listo para enviar directamente al contador.
+          </p>
+
+          <div class="form-grid" style="margin-bottom:18px">
+            <div class="form-group">
+              <label>Año</label>
+              <select id="exp-anio"></select>
+            </div>
+            <div class="form-group">
+              <label>Mes (opcional — vacío = todo el año)</label>
+              <select id="exp-mes">
+                <option value="">Todo el año</option>
+                <option value="01">Enero</option><option value="02">Febrero</option>
+                <option value="03">Marzo</option><option value="04">Abril</option>
+                <option value="05">Mayo</option><option value="06">Junio</option>
+                <option value="07">Julio</option><option value="08">Agosto</option>
+                <option value="09">Septiembre</option><option value="10">Octubre</option>
+                <option value="11">Noviembre</option><option value="12">Diciembre</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn btn-accent" onclick="pedirPass('🔒 Exportar para el contador','Solo personal autorizado puede exportar datos.',()=>exportarContador())" style="width:100%;justify-content:center;padding:14px">
+            📊 Generar Excel para el contador
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">¿Qué incluye?</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+            <div style="background:var(--s2);border-radius:10px;padding:14px">
+              <div style="font-size:16px;margin-bottom:6px">📋</div>
+              <div style="font-size:12px;font-weight:600;margin-bottom:4px">Resumen anual</div>
+              <div style="font-size:11px;color:var(--muted)">Una fila por mes con totales por método de pago y neto final</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:14px">
+              <div style="font-size:16px;margin-bottom:6px">📅</div>
+              <div style="font-size:12px;font-weight:600;margin-bottom:4px">Detalle mensual</div>
+              <div style="font-size:11px;color:var(--muted)">Una hoja por mes con cada transacción individual</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:14px">
+              <div style="font-size:16px;margin-bottom:6px">💸</div>
+              <div style="font-size:12px;font-weight:600;margin-bottom:4px">Egresos separados</div>
+              <div style="font-size:11px;color:var(--muted)">Hoja exclusiva con todos los egresos y retiros del período</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:14px">
+              <div style="font-size:16px;margin-bottom:6px">✅</div>
+              <div style="font-size:12px;font-weight:600;margin-bottom:4px">Fórmulas activas</div>
+              <div style="font-size:11px;color:var(--muted)">Todos los totales son fórmulas Excel, no valores hardcodeados</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+<!-- MODAL EDITAR VENTA -->
+<div class="modal-overlay" id="modal-editar">
+  <div class="modal" style="max-width:560px">
+    <span class="modal-close" onclick="closeModal('modal-editar')">✕</span>
+    <div class="modal-title">✏️ Editar venta</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-grid" style="margin-bottom:16px">
+      <div class="form-group">
+        <label>Cliente / Nombre</label>
+        <input type="text" id="edit-cliente" list="socios-list">
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="edit-fecha">
+      </div>
+      <div class="form-group">
+        <label>Hora</label>
+        <input type="time" id="edit-hora">
+      </div>
+      <div class="form-group">
+        <label>Concepto</label>
+        <select id="edit-concepto">
+          <option value="membresia">Membresía mensual</option>
+          <option value="semestral">Semestral</option>
+          <option value="anual">Anual</option>
+          <option value="pase_diario">Pase diario</option>
+          <option value="locker">Locker</option>
+          <option value="agua">Agua</option>
+          <option value="cafe">Café</option>
+          <option value="pack_cafe">Pack café</option>
+          <option value="barrita">Barrita</option>
+          <option value="power">Power / Monster</option>
+          <option value="soda">Soda</option>
+          <option value="sauna">Sauna</option>
+          <option value="rutina">Rutina personalizada</option>
+          <option value="egreso">Egreso / Gasto</option>
+          <option value="retiro">Retiro de caja</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Monto ($) <span id="f-monto-hint" style="font-size:10px;color:var(--muted);font-weight:400"></span></label>
+        <input type="number" id="edit-monto" min="0">
+      </div>
+      <div class="form-group">
+        <label>Método de pago</label>
+        <select id="edit-metodo">
+          <option value="efectivo">💵 Efectivo</option>
+          <option value="transferencia">🏦 Transferencia</option>
+          <option value="debito">💳 Débito</option>
+          <option value="credito">💳 Crédito</option>
+          <option value="qr">📱 QR / MercadoPago</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sede</label>
+        <select id="edit-sede">
+          <option value="VIA 24">VIA 24</option>
+          <option value="BARRIO NORTE">BARRIO NORTE</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Observaciones</label>
+        <input type="text" id="edit-obs" placeholder="Notas...">
+      </div>
+    </div>
+    <!-- Historial de cambios de esta venta -->
+    <div id="edit-historial-wrap" style="display:none;margin-bottom:16px">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📋 Historial de cambios</div>
+      <div id="edit-historial-list" style="max-height:120px;overflow-y:auto;font-size:11px;color:var(--muted)"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-accent" onclick="guardarEdicion()" style="flex:1;justify-content:center">💾 Guardar cambios</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-editar')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div class="modal-overlay" id="modal-eliminar">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">🗑️</div>
+    <div class="modal-title" style="text-align:center">¿Eliminar esta venta?</div>
+    <div id="eliminar-detalle" style="background:var(--s2);border-radius:10px;padding:16px;margin-bottom:20px;text-align:left;font-size:13px"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Esta acción no se puede deshacer.</div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-danger" onclick="confirmarEliminar()" style="flex:1">Sí, eliminar</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-eliminar')" style="flex:1">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL CONTRASEÑA -->
+<div class="modal-overlay" id="modal-pass">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:42px;margin-bottom:10px">🔒</div>
+    <div class="modal-title" style="text-align:center;margin-bottom:6px" id="pass-titulo">Acceso restringido</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px" id="pass-desc">Ingresá la contraseña para continuar</div>
+    <div style="position:relative;margin-bottom:8px">
+      <input type="password" id="pass-input"
+        placeholder="Contraseña..."
+        style="width:100%;text-align:center;font-size:18px;letter-spacing:6px;padding:14px;"
+        onkeydown="if(event.key==='Enter') verificarPass()">
+      <div id="pass-error" style="color:var(--sc-red);font-size:12px;margin-top:8px;display:none">
+        ❌ Contraseña incorrecta
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-accent" onclick="verificarPass()" style="flex:1;justify-content:center">Ingresar</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-pass')" style="flex:1">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ANULAR VENTA -->
+<div class="modal-overlay" id="modal-anular">
+  <div class="modal" style="max-width:460px">
+    <span class="modal-close" onclick="closeModal('modal-anular')">✕</span>
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:38px;margin-bottom:6px">🟡</div>
+      <div class="modal-title" style="text-align:center">Anular comprobante</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">La venta quedará como ANULADA. No se elimina del historial.</div>
+    </div>
+    <div id="anular-detalle" style="background:var(--s2);border-radius:10px;padding:16px;margin-bottom:18px;font-size:13px"></div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Quién anula</label>
+      <input type="text" id="anular-quien" placeholder="Tu nombre...">
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label>Motivo de anulación</label>
+      <select id="anular-motivo-sel" onchange="toggleMotivoCustom()">
+        <option value="">Seleccioná un motivo...</option>
+        <option value="Error de carga">Error de carga</option>
+        <option value="Pago duplicado">Pago duplicado</option>
+        <option value="Cliente canceló">Cliente canceló</option>
+        <option value="Monto incorrecto">Monto incorrecto</option>
+        <option value="Concepto incorrecto">Concepto incorrecto</option>
+        <option value="otro">Otro motivo...</option>
+      </select>
+      <input type="text" id="anular-motivo-txt" placeholder="Describí el motivo..." style="display:none;margin-top:8px">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-accent" onclick="confirmarAnular()" style="flex:1;justify-content:center;background:#b45309;box-shadow:none">
+        🟡 Confirmar anulación
+      </button>
+      <button class="btn btn-outline" onclick="closeModal('modal-anular')" style="flex:1">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RETIRO DE CAJA -->
+<div class="modal-overlay" id="modal-retiro">
+  <div class="modal" style="max-width:420px">
+    <span class="modal-close" onclick="closeModal('modal-retiro')">✕</span>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:38px">💸</div>
+      <div class="modal-title" style="text-align:center">Registrar retiro de caja</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">
+        Efectivo disponible: <strong id="retiro-disponible" style="color:var(--sc-yellow)">$0</strong>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Monto a retirar ($)</label>
+      <input type="number" id="retiro-monto" min="1" placeholder="Ej: 50000">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Quién retira</label>
+      <input type="text" id="retiro-quien" placeholder="Nombre del responsable...">
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Observaciones (opcional)</label>
+      <input type="text" id="retiro-obs" placeholder="Para qué se usa...">
+    </div>
+    <button class="btn btn-accent" onclick="confirmarRetiro()" style="width:100%;justify-content:center;padding:14px;background:var(--sc-yellow);color:#000">
+      💸 Confirmar retiro
+    </button>
+  </div>
+</div>
+
+<!-- MODAL RESUMEN DE TURNO -->
+<div class="modal-overlay turno-modal" id="modal-turno">
+  <div class="modal" style="max-width:540px">
+    <span class="modal-close" onclick="closeModal('modal-turno')">✕</span>
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:36px;margin-bottom:6px">📋</div>
+      <div class="modal-title" style="text-align:center">Resumen del turno</div>
+      <div id="turno-subtitulo" style="font-size:12px;color:var(--muted);margin-top:4px"></div>
+    </div>
+    <div id="turno-body"></div>
+    <div style="margin-top:18px;display:flex;gap:10px">
+      <button class="btn btn-accent" onclick="imprimirTurno()" style="flex:1;justify-content:center">
+        🖨️ Imprimir resumen
+      </button>
+      <button class="btn btn-outline" onclick="closeModal('modal-turno')" style="flex:1">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GASTO RÁPIDO -->
+<div class="modal-overlay" id="modal-gasto">
+  <div class="modal" style="max-width:420px">
+    <span class="modal-close" onclick="closeModal('modal-gasto')">✕</span>
+    <div class="modal-title">💸 Registrar gasto</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:18px">
+      Se descuenta del efectivo en caja y queda registrado en el historial.
+    </p>
+
+    <!-- Categorías rápidas -->
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Categoría</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px" id="gasto-cats">
+      <div class="gasto-cat" onclick="selGastoCat('limpieza',this)">🧹 Limpieza</div>
+      <div class="gasto-cat" onclick="selGastoCat('insumos',this)">📦 Insumos</div>
+      <div class="gasto-cat" onclick="selGastoCat('mantenimiento',this)">🔧 Mantenimiento</div>
+      <div class="gasto-cat" onclick="selGastoCat('servicios',this)">💡 Servicios</div>
+      <div class="gasto-cat" onclick="selGastoCat('traslado',this)">🚗 Traslado</div>
+      <div class="gasto-cat" onclick="selGastoCat('otro_gasto',this)">📝 Otro</div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Detalle <span style="font-size:10px;color:var(--muted)">(opcional)</span></label>
+      <input type="text" id="gasto-detalle" placeholder="Ej: Escoba, jabón líquido, carga de SUBE..."
+        style="width:100%">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Monto ($)</label>
+      <input type="number" id="gasto-monto" placeholder="0" min="0"
+        style="width:100%;font-size:22px;font-weight:700;text-align:center;padding:12px"
+        onkeydown="if(event.key==='Enter') confirmarGasto()">
+    </div>
+
+    <div class="form-group" style="margin-bottom:18px">
+      <label>Método de pago</label>
+      <select id="gasto-metodo" style="width:100%">
+        <option value="efectivo">💵 Efectivo (resta de caja)</option>
+        <option value="transferencia">🏦 Transferencia</option>
+        <option value="debito">💳 Débito</option>
+      </select>
+    </div>
+
+    <button class="btn btn-accent" onclick="confirmarGasto()"
+      style="width:100%;justify-content:center;padding:14px;font-size:15px">
+      💸 Registrar gasto
+    </button>
+  </div>
+</div>
+
+
+<!-- MODAL NUEVO / EDITAR EGRESO -->
+<div class="modal-overlay" id="modal-egreso">
+  <div class="modal" style="max-width:500px">
+    <span class="modal-close" onclick="closeModal('modal-egreso')">✕</span>
+    <div class="modal-title" id="eg-modal-title">➕ Nuevo egreso</div>
+
+    <!-- Categoría -->
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Categoría</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px" id="eg-cat-btns">
+      <div class="egreso-form-cat" onclick="selEgresoCat('sueldo',this)">👷 Sueldos</div>
+      <div class="egreso-form-cat" onclick="selEgresoCat('alquiler',this)">🏢 Alquiler</div>
+      <div class="egreso-form-cat" onclick="selEgresoCat('servicios',this)">💡 Servicios</div>
+      <div class="egreso-form-cat" onclick="selEgresoCat('proveedores',this)">📦 Proveedores</div>
+      <div class="egreso-form-cat" onclick="selEgresoCat('impuestos',this)">🧾 Impuestos</div>
+      <div class="egreso-form-cat" onclick="selEgresoCat('mantenimiento',this)">🔧 Mantenimiento</div>
+      <div class="egreso-form-cat" onclick="selEgresoCat('otro',this)">📝 Otro</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Descripción *</label>
+        <input type="text" id="eg-desc" placeholder="Ej: Sueldo enero — María" style="width:100%">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Monto *</label>
+        <input type="number" id="eg-monto" placeholder="0" min="0" style="width:100%;font-weight:700">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Fecha de vencimiento</label>
+        <input type="date" id="eg-vencimiento" style="width:100%">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Estado</label>
+        <select id="eg-estado" style="width:100%" onchange="toggleEgFechaPago()">
+          <option value="pendiente">⏳ Pendiente</option>
+          <option value="pagado">✅ Pagado</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="eg-fecha-pago-wrap" style="display:none;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Fecha de pago</label>
+          <input type="date" id="eg-fecha-pago" style="width:100%">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Método</label>
+          <select id="eg-metodo-pago" style="width:100%">
+            <option value="transferencia">🏦 Transferencia</option>
+            <option value="efectivo">💵 Efectivo</option>
+            <option value="debito">💳 Débito</option>
+            <option value="cheque">📝 Cheque</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>¿Se repite? <span style="font-size:10px;color:var(--muted)">(para pagos recurrentes)</span></label>
+      <select id="eg-recurrencia" style="width:100%">
+        <option value="">No — pago único</option>
+        <option value="mensual">Mensual</option>
+        <option value="bimestral">Bimestral</option>
+        <option value="trimestral">Trimestral</option>
+        <option value="anual">Anual</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:18px">
+      <label>Notas <span style="font-size:10px;color:var(--muted)">(para el contador)</span></label>
+      <textarea id="eg-notas" rows="2" placeholder="Observaciones, nro. de comprobante, etc."
+        style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;
+          padding:9px 12px;color:var(--text);font-family:'DM Sans';font-size:13px;
+          resize:none;outline:none"></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-accent" onclick="guardarEgreso()" style="flex:1;justify-content:center;padding:13px">
+        💾 Guardar
+      </button>
+      <button class="btn btn-outline" onclick="closeModal('modal-egreso')" style="padding:13px 18px">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-editar-producto">
+  <div class="modal" style="max-width:440px">
+    <span class="modal-close" onclick="closeModal('modal-editar-producto')">✕</span>
+    <div class="modal-title">✏️ Editar producto</div>
+    <input type="hidden" id="ep-key">
+
+    <div style="display:grid;grid-template-columns:68px 1fr;gap:10px;margin-bottom:12px">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Ícono</label>
+        <input type="text" id="ep-icon" placeholder="🏋️" maxlength="4"
+          style="text-align:center;font-size:22px;padding:6px 8px">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Nombre *</label>
+        <input type="text" id="ep-label" placeholder="Ej: Membresía mensual">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px">
+      <label>Descripción <span style="font-size:10px;color:var(--muted)">(opcional)</span></label>
+      <input type="text" id="ep-desc" placeholder="Ej: Acceso completo al gimnasio">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Precio ($)</label>
+        <input type="number" id="ep-precio" placeholder="0" min="0" style="font-weight:700">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding-top:20px">
+          <input type="checkbox" id="ep-rapido"
+            style="width:16px;height:16px;accent-color:var(--sc-yellow);cursor:pointer">
+          <span style="font-size:12px">Acceso rápido</span>
+        </label>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">
+        <input type="checkbox" id="ep-fisico"
+          style="width:16px;height:16px;accent-color:var(--sc-yellow);cursor:pointer"
+          onchange="document.getElementById('ep-stock-wrap').style.display=this.checked?'grid':'none'">
+        <span style="font-size:13px">Producto físico <span style="font-size:10px;color:var(--muted)">(tiene stock)</span></span>
+      </label>
+      <div id="ep-stock-wrap" style="display:none;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Stock actual</label>
+          <input type="number" id="ep-stock" placeholder="0" min="0">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Stock mínimo</label>
+          <input type="number" id="ep-stockmin" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-accent" onclick="guardarEdicionProducto()" style="flex:1;justify-content:center;padding:13px">
+        💾 Guardar cambios
+      </button>
+      <button class="btn btn-outline" onclick="closeModal('modal-editar-producto')" style="padding:13px 18px">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SOCIO -->
+<div class="modal-overlay" id="modal-socio">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('modal-socio')">✕</span>
+    <div class="modal-title" id="modal-socio-title">Socio</div>
+    <div id="modal-socio-body"></div>
+  </div>
+</div>
+
+<!-- MODAL LOCKER -->
+<div class="modal-overlay" id="modal-locker">
+  <div class="modal" style="max-width:480px">
+    <span class="modal-close" onclick="closeModal('modal-locker')">✕</span>
+    <div class="modal-title" id="modal-locker-title">Locker</div>
+    <div id="modal-locker-body"></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="modal-usar-ficha" onclick="if(event.target===this)closeModal('modal-usar-ficha')">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">☕</div>
+    <div class="modal-title" id="uf-titulo">Usar ficha</div>
+    <div id="uf-fichas-disp" style="font-family:'Bebas Neue';font-size:56px;color:var(--sc-yellow);line-height:1;margin:8px 0">10</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">fichas disponibles</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="btn" style="background:var(--sc-yellow);color:#000;border:none;font-weight:700;font-size:15px;padding:14px"
+        onclick="confirmarUsarFicha('normal')">
+        ☕ Usar 1 ficha
+      </button>
+      <button class="btn btn-outline" style="border-color:var(--sc-red);color:var(--sc-red);font-size:13px;padding:14px"
+        onclick="confirmarUsarFicha('tragada')">
+        🪙 Ficha tragada
+      </button>
+    </div>
+    <button class="btn btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('modal-usar-ficha')">Cancelar</button>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-cambio-turno" onclick="if(event.target===this)closeModal('modal-cambio-turno')">
+  <div class="modal" style="max-width:440px">
+    <div style="font-size:36px;text-align:center;margin-bottom:8px">🔄</div>
+    <div class="modal-title" style="text-align:center">Cambio de Turno</div>
+    <div style="background:var(--s2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--muted)" id="ct-resumen-turno">
+      Calculando recaudación del turno actual...
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="form-group" style="margin-bottom:0">
+        <label>✍️ Sale del turno</label>
+        <input type="text" id="ct-sale" placeholder="Tu nombre / firma"
+          style="font-size:14px;font-weight:600;border-color:var(--sc-red)">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>👤 Entra al turno</label>
+        <input type="text" id="ct-entra" placeholder="Nombre de quien entra"
+          style="font-size:14px;font-weight:600;border-color:var(--green)">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Obs. (opcional)</label>
+      <input type="text" id="ct-obs" placeholder="Notas del turno...">
+    </div>
+    <div id="ct-confirm-area" style="display:none;background:linear-gradient(135deg,rgba(0,200,100,.08),transparent);border:1.5px solid var(--green);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Confirmás el cambio de turno:</div>
+      <div style="font-size:15px;font-weight:700" id="ct-confirm-text"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn" style="flex:1;background:var(--green);color:#000;border:none;font-weight:700;font-size:14px;padding:14px"
+        id="ct-btn-confirm" onclick="preConfirmarTurno()">
+        ✅ Confirmar cambio
+      </button>
+      <button class="btn btn-outline" onclick="closeModal('modal-cambio-turno')">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-nuevo-pack" onclick="if(event.target===this)closeModal('modal-nuevo-pack')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">☕ Nuevo Pack de Café</div>
+    <div class="form-group">
+      <label>Nombre del cliente</label>
+      <input type="text" id="pack-cliente" placeholder="Ej: Juan Pérez" autocomplete="off"
+        style="font-size:15px;font-weight:600">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group">
+        <label>Cantidad de fichas</label>
+        <select id="pack-fichas" style="font-size:15px;font-weight:700">
+          <option value="10">10 fichas</option>
+          <option value="5">5 fichas</option>
+          <option value="20">20 fichas</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sede</label>
+        <select id="pack-sede" style="font-size:14px">
+          <option value="VIA 24">VIA 24</option>
+          <option value="BARRIO NORTE">BARRIO NORTE</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Método de pago</label>
+      <select id="pack-metodo" style="font-size:14px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'DM Sans';width:100%;outline:none">
+        <option value="efectivo">💵 Efectivo</option>
+        <option value="transferencia">🏦 Transferencia</option>
+        <option value="debito">💳 Débito</option>
+        <option value="credito">💳 Crédito</option>
+        <option value="qr">📱 QR</option>
+      </select>
+    </div>
+    <div class="form-group">
+    <label>Obs. (opcional)</label>
+      <input type="text" id="pack-obs" placeholder="Notas...">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-accent" style="flex:1;font-weight:700" onclick="confirmarNuevoPack()">☕ Crear pack</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-nuevo-pack')">Cancelar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+
+
+
+<!-- TICKET IMPRIMIBLE -->
+<div id="ticket-print-wrap">
+  <div class="ticket">
+    <div class="ticket-logo">SPORTCLUB</div>
+    <div class="ticket-sede" id="tkt-sede"></div>
+    <hr class="ticket-divider">
+    <div class="ticket-row"><span>Fecha:</span><span id="tkt-fecha"></span></div>
+    <div class="ticket-row"><span>Hora:</span><span id="tkt-hora"></span></div>
+    <hr class="ticket-divider">
+    <div class="ticket-row"><span>Cliente:</span><span id="tkt-cliente"></span></div>
+    <div class="ticket-row"><span>Concepto:</span><span id="tkt-concepto"></span></div>
+    <hr class="ticket-divider">
+    <div class="ticket-row"><span>Método de pago:</span><span id="tkt-metodo"></span></div>
+    <div class="ticket-total"><span>TOTAL:</span><span id="tkt-total"></span></div>
+    <hr class="ticket-divider">
+    <div class="ticket-comprobante" id="tkt-numero"></div>
+    <hr class="ticket-divider">
+    <div class="ticket-footer">¡Gracias por entrenar con nosotros!</div>
+    <div class="ticket-footer">sportclubtucuman.com.ar</div>
+    <br>
+    <div style="text-align:center">
+      <button onclick="cerrarTicket()" style="font-family:monospace;padding:4px 12px;cursor:pointer;margin-right:8px">✕ Cerrar</button>
+      <button onclick="window.print()" style="font-family:monospace;padding:4px 12px;cursor:pointer;font-weight:900">🖨 Imprimir</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
+<!-- Scripts — orden importante -->
+<!-- 1. Módulos ES6 se cargan via loader (type="module") -->
+<script type="module" src="./js/loader.js?v=2.0.0"></script>
+
+<!-- 2. app.js se carga después de que los módulos estén listos -->
+<script>
+  // Esperar a que los módulos estén listos antes de cargar app.js
+  function loadAppJS() {
+    const s = document.createElement('script');
+    s.src = './js/app.js?v=2.0.0';
+    s.onerror = () => console.error('Error cargando app.js');
+    document.head.appendChild(s);
+  }
+
+  if (window.SC_READY) {
+    loadAppJS();
+  } else {
+    document.addEventListener('sc:ready', loadAppJS, { once: true });
+    // Fallback: si tarda más de 3s, cargar igual (modo offline sin módulos)
+    setTimeout(() => {
+      if (!window.SC_READY) {
+        console.warn('[SportClub] Módulos tardaron demasiado — cargando en modo fallback');
+        loadAppJS();
+      }
+    }, 3000);
+  }
+</script>
+
+</html>
