@@ -44,7 +44,7 @@ async function gasRequest(action, payload = {}) {
   try {
     const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ token, action, ...payload }),
     });
 
