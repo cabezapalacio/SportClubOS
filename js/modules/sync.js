@@ -115,6 +115,8 @@ export async function loadFromRemote() {
 // ── Merge incremental (polling) ───────────────────────────────────────
 
 export async function mergeFromRemote() {
+  if(state.syncPending || (state.offlineQueue && state.offlineQueue.length>0)) return;
+
   if (!state.gasUrl || state.syncing) return;
   // Skip si sincronizó hace menos del cooldown
   if (state.lastSyncTime &&

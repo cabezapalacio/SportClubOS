@@ -258,7 +258,7 @@ export function crmToRows(crmNotas) {
   const rows = [];
   for (const [nombre, notas] of Object.entries(crmNotas)) {
     for (const n of (notas || [])) {
-      rows.push([nombre, n.fecha||'', n.texto||'', n.tipo||'', n.quien||'', n.id||'', Date.now()]);
+      rows.push([nombre, n.fecha||'', n.texto||'', n.tipo||'', n.quien||'', n.id||'', (n.updatedAt || n.timestamp || Date.now())]);
     }
   }
   return rows;
