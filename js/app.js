@@ -31,7 +31,7 @@ function hashStr(s)      { return window.SC?.utils?.hashStr(s)     || '0'; }
 let ventas, socios, lockersH, lockersM, packsCafe, turnos, egresos;
 let contactos, crmNotas, crmResueltos, waLog, productos, historialCambios;
 let rolActual = '';
-// [moved to store.js] let sedeActual = localStorage.getItem('sc_sede') |...
+let sedeActual = localStorage.getItem('sc_sede') || 'VIA 24';
 let adminPass  = localStorage.getItem('sc_admin_pass') || '1234';
 
 function _initStateAliases() {
@@ -2501,23 +2501,96 @@ function registrarPagoDeuda(ventaId) {
   try { renderSocios(); } catch(e) {}
 }
 
+
+// ── Funciones de configuración de Base de Datos (v2.0 — Apps Script) ──
+
+function guardarConexionDB() {
+  const urlEl = document.getElementById('db-gas-url');
+  const tokEl = document.getElementById('db-gas-token');
+  const url   = (urlEl?.value || '').trim();
+  const token = (tokEl?.value || '').trim();
+
+  if (!url || !url.startsWith('https://script.google.com')) {
+    toast('⚠️ Pegá la URL del Web App de Apps Script');
+    return;
+  }
+  if (!token) {
+    toast('⚠️ Ingresá el token de API');
+    return;
+  }
+
+  localStorage.setItem('sc_gas_url',   url);
+  localStorage.setItem('sc_gas_token', token);
+  if (window.SC?.state) {
+    window.SC.state.gasUrl   = url;
+    window.SC.state.gasToken = token;
+  }
+  toast('💾 Configuración guardada — conectando...');
+  testConexionDB();
+}
+
+async function testConexionDB() {
+  const cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) {
+    toast('⚠️ Completá la URL y el token primero');
+    return;
+  }
+  setSyncStatus('loading', 'Probando conexión...');
+  try {
+    if (window.SC?.state) {
+      window.SC.state.gasUrl   = cfg.url;
+      window.SC.state.gasToken = cfg.token;
+    }
+    const ok = await window.SC?.sync?.testConexion?.();
+    if (ok !== false) {
+      setSyncStatus('online', 'Conectado ✅');
+      toast('✅ Conexión exitosa');
+      await window.SC?.sync?.loadFromRemote?.();
+      renderDBStatus();
+    } else {
+      setSyncStatus('error', 'Error de conexión');
+      toast('❌ No se pudo conectar — verificá la URL y el token');
+    }
+  } catch(e) {
+    setSyncStatus('error', 'Error de conexión');
+    toast('❌ Error: ' + e.message);
+    console.error('testConexionDB error:', e);
+  }
+}
+
+function desconectarDB() {
+  if (!confirm('¿Desconectar la base de datos? Los datos locales se conservan.')) return;
+  localStorage.removeItem('sc_gas_url');
+  localStorage.removeItem('sc_gas_token');
+  if (window.SC?.state) {
+    window.SC.state.gasUrl   = '';
+    window.SC.state.gasToken = '';
+    window.SC.state.connected = false;
+  }
+  if (window.SC?.sync?.stopPolling) window.SC.sync.stopPolling();
+  setSyncStatus('offline', 'Sin base de datos');
+  toast('🔌 Desconectado');
+  renderDBStatus();
+}
+
 function renderDBStatus() {
-  const el = document.getElementById('db-sheet-id');
-  if (el && dbSheetId) el.value = dbSheetId;
-  const ls = localStorage.getItem(DB_KEYS.lastSync);
+  const cfg = getGasConfig();
+  const elUrl = document.getElementById('db-gas-url');
+  const elTok = document.getElementById('db-gas-token');
+  if (elUrl && cfg.url) elUrl.value = cfg.url;
+  if (elTok && cfg.token) elTok.value = cfg.token;
   const dlast = document.getElementById('db-last-sync');
-  if (dlast) dlast.textContent = ls || 'Nunca';
+  if (dlast) dlast.textContent = window.SC?.state?.lastSyncTime
+    ? new Date(window.SC.state.lastSyncTime).toLocaleTimeString('es-AR') : 'Nunca';
   const dclocal = document.getElementById('db-count-local');
-  if (dclocal) dclocal.textContent = ventas.length;
+  if (dclocal) dclocal.textContent = (ventas||[]).length;
   if (dbConectado) setDBStatus(true, 'Conectado a Google Sheets ✅');
-  else if (dbSheetId) setDBStatus(false, 'Credenciales guardadas — probar conexión');
+  else if (cfg.url) setDBStatus(false, 'URL configurada — probar conexión');
   else setDBStatus(false, 'Sin conectar');
 }
 
-// ── Al arrancar — reconectar automáticamente si hay creds guardadas ──
-if (dbSheetId && dbCreds) {
-  testConexionDB().catch(() => {});
-}
+// ── Al arrancar — reconectar automáticamente si hay config GAS guardada ──
+// (la reconexión real se hace en DOMContentLoaded → setTimeout → getGasConfig)
 
 // ── Parchar registrarVenta para guardar en Sheets también ──
 const _registrarVentaOrig = registrarVenta;
@@ -2526,7 +2599,6 @@ const _registrarVentaOrig = registrarVenta;
 // ══════════════════════════════════════════
 //  SEDE ACTIVA
 // ══════════════════════════════════════════
-let sedeActual = localStorage.getItem('sc_sede') || 'VIA 24';
 
 function setSede(sede) {
   sedeActual = sede;
