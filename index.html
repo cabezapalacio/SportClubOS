@@ -16,7 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Estilos — versionado para forzar refresh en cada deploy -->
-<link rel="stylesheet" href="./css/styles.css?v=2.0.0">
+<link rel="stylesheet" href="./css/styles.css?v=2.0.1">
 
 </head>
 <body>
@@ -2439,14 +2439,14 @@
 
 <!-- Scripts — orden importante -->
 <!-- 1. Módulos ES6 se cargan via loader (type="module") -->
-<script type="module" src="./js/loader.js?v=2.0.0"></script>
+<script type="module" src="./js/loader.js?v=2.0.1"></script>
 
 <!-- 2. app.js se carga después de que los módulos estén listos -->
 <script>
   // Esperar a que los módulos estén listos antes de cargar app.js
   function loadAppJS() {
     const s = document.createElement('script');
-    s.src = './js/app.js?v=2.0.0';
+    s.src = './js/app.js?v=2.0.1';
     s.onerror = () => console.error('Error cargando app.js');
     document.head.appendChild(s);
   }
