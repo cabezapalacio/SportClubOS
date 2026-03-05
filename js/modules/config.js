@@ -24,7 +24,7 @@ export const SEDE_SEQ_KEY = {
 
 // ── Google Apps Script endpoint ──────────────────────────────────────
 // Reemplazar con la URL del Web App publicado en Apps Script
-export const GAS_URL = ''; // ej: https://script.google.com/macros/s/XXXX/exec
+export const GAS_URL = 'https://sportclub-api.cabezapalacio.workers.dev';
 
 // ── Nombres de hojas en Google Sheets ───────────────────────────────
 export const SHEETS = {
